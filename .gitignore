@@ -119,8 +119,13 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv*/
 env/
 venv/
+
+# fs-analysis runtime outputs
+fsa-output/
+*.skeleton.json
 ENV/
 env.bak/
 venv.bak/
