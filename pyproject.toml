@@ -1,23 +1,25 @@
 [tool.poetry]
+# Questo non e' un pacchetto PyPI: l'engine vive dentro il plugin e i test lo
+# importano via tests/conftest.py. Poetry serve solo per ambiente, task e versione.
 name = "fs-analysis"
-packages = [
-    { include = "fs-analysis" },
-]
-version = "2.4.1"
-description = "A template for Python projects, using Poetry"
-authors = ["Giovanni Ciatto <giovanni.ciatto@unibo.it>"]
-license = "Apache 2.0"
+version = "0.1.0"
+description = "Plugin Claude Code per l'analisi di bilancio: riclassificazione (principi contabili italiani), quadratura al centesimo, indici/grade/fido e report a layout fisso (XLSX + PDF)."
+authors = ["Luca Mambelli <luca.mambelli1i@gmail.com>"]
+license = "Apache-2.0"
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 # update the Python versions in .github/workflows/check.yml if you change this
 python = ">= 3.9.0 < 4.0.0"
+openpyxl = "^3.1.5"
 
 [tool.poetry.group.dev.dependencies]
+pdfplumber = "^0.11.4"
+fonttools = "^4.55.0"
 coverage = "^7.4.0"
 mypy = "^1.10.1"
 poethepoet = "^0.37.0"
-poetry = "^1.8.3"
 pytest = "^8.3.5"
 ruff = "^0.15.0"
 
@@ -30,12 +32,23 @@ ruff-check = "ruff check"
 ruff-fix = "ruff check --fix"
 format = "ruff format"
 format-check = "ruff format --check"
-mypy = "mypy fs-analysis tests"
-compile = "python -m compileall fs-analysis tests"
+mypy = "mypy plugins/fs-analysis/skills/analyzing-financial-statements/scripts/fsa tests"
+compile = "python -m compileall plugins/fs-analysis/skills/analyzing-financial-statements/scripts tests"
 static-checks = [
     "ruff-check",
     "mypy",
 ]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 110
+extend-exclude = ["plugins/fs-analysis/skills/analyzing-financial-statements/assets"]
+
+[tool.mypy]
+# Runtime supportato da 3.9 (annotazioni rinviate via __future__); mypy recente
+# analizza con target minimo 3.10.
+python_version = "3.10"
+ignore_missing_imports = true
 
 [build-system]
 requires = ["poetry-core"]

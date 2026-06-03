@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
-  packages: write
 jobs:
   release:
     name: Release
@@ -21,7 +20,7 @@ jobs:
       - name: Get All Tags
         run: git fetch --tags -f
 
-      - name: Dry-run Release for Initial Commit
+      - name: Detect Initial Commit
         id: skip_release
         run: |
           if git rev-parse HEAD^1 >/dev/null 2>&1; then
@@ -30,9 +29,10 @@ jobs:
             echo "skip=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Get Python Version
-        id: get-python-version
-        run: echo version=$(python setup.py get_minimum_python_version | tail -n 1) >> $GITHUB_OUTPUT
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
 
       - name: Install Poetry
         run: |
@@ -41,10 +41,6 @@ jobs:
 
       - name: Restore Development Environment
         run: poetry install
-
-      # Uncomment to change default logging level during release
-      # - name: Change default logging level
-      #   run: sed -i -e 's/logging.DEBUG/logging.WARN/g' **/*/__init__.py
 
       - name: Get Node Version
         id: get-node-version
@@ -60,8 +56,6 @@ jobs:
           npm install
           npx semantic-release
         env:
-          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-          RELEASE_TEST_PYPI: ${{ github.event.repository.is_template || contains(github.repository, 'template') }}
           # dry run if not on main/master branch, or if initial commit
           RELEASE_DRY_RUN: ${{ steps.skip_release.outputs.skip == 'true' || (github.ref_name != 'master' && github.ref_name != 'main') }}
