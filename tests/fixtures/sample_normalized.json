@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "nome_azienda": "Acme S.r.l.",
+    "anno": 2024,
+    "tipologia": "Fornitore",
+    "ateco": "62.01",
+    "partita_iva": "12345678901",
+    "forma_giuridica": "S.r.l.",
+    "sede": "Milano (MI)"
+  },
+  "conto_economico": {
+    "valore_della_produzione": {"y0": 2000000, "y1": 1800000},
+    "ricavi_di_vendita": {"y0": 1950000, "y1": 1760000},
+    "costi_della_produzione": {"y0": 1800000, "y1": 1650000},
+    "costi_per_materie": {"y0": 700000, "y1": 640000},
+    "costi_per_servizi": {"y0": 500000, "y1": 460000},
+    "costi_godimento_beni_terzi": {"y0": 50000, "y1": 45000},
+    "costi_personale": {"y0": 400000, "y1": 380000},
+    "ammortamenti": {"y0": 120000, "y1": 110000},
+    "accantonamenti_per_rischi": {"y0": 10000, "y1": 8000},
+    "oneri_diversi_di_gestione": {"y0": 20000, "y1": 18000},
+    "ebit": {"y0": 200000, "y1": 150000},
+    "proventi_finanziari": {"y0": 5000, "y1": 4000},
+    "oneri_finanziari": {"y0": 30000, "y1": 28000},
+    "utile_perdita_esercizio": {"y0": 110000, "y1": 80000},
+    "dipendenti": {"y0": 25, "y1": 23}
+  },
+  "stato_patrimoniale": {
+    "immobilizzazioni": {"y0": 500000, "y1": 480000},
+    "rimanenze": {"y0": 200000, "y1": 180000},
+    "crediti": {"y0": 300000, "y1": 280000},
+    "attivita_finanziarie": {"y0": 50000, "y1": 40000},
+    "disponibilita_liquide": {"y0": 100000, "y1": 90000},
+    "ratei_risconti_attivi": {"y0": 10000, "y1": 9000},
+    "totale_attivo": {"y0": 1160000, "y1": 1079000},
+    "totale_patrimonio_netto": {"y0": 400000, "y1": 358000},
+    "fondi_rischi_oneri": {"y0": 30000, "y1": 28000},
+    "tfr": {"y0": 70000, "y1": 65000},
+    "totale_debiti": {"y0": 640000, "y1": 610000},
+    "debiti_esigibili_breve": {"y0": 400000, "y1": 380000},
+    "debiti_esigibili_oltre": {"y0": 240000, "y1": 230000},
+    "totale_debiti_finanziari": {"y0": 300000, "y1": 280000},
+    "debiti_finanziari_breve": {"y0": 100000, "y1": 90000},
+    "debiti_finanziari_oltre": {"y0": 200000, "y1": 190000},
+    "ratei_risconti_passivi": {"y0": 20000, "y1": 18000},
+    "debiti_verso_fornitori": {"y0": 250000, "y1": 240000},
+    "crediti_verso_clienti": {"y0": 280000, "y1": 260000}
+  }
+}
