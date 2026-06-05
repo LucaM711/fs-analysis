@@ -102,10 +102,9 @@ def read_back(recalced_xlsx: str | Path) -> dict[str, Any]:
     }
 
     ratings = {
-        # B11 (Reddituale) e B17 (Patrimoniale) sono valori da scrivere;
-        # B14 (Finanziaria) e' gia' una formula nel modello.
+        # B11 (Reddituale), B14 (Finanziaria), B17 (Patrimoniale) sono valori da scrivere
         "reddituale": rating_label(sub_redd),
-        "finanziaria": _v(rep, "B14"),
+        "finanziaria": rating_label(sub_fin),
         "patrimoniale": rating_label(sub_patr),
     }
 

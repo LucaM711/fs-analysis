@@ -95,11 +95,12 @@ def main() -> int:
         return 3
     metrics = metrics_mod.read_back(editable)
 
-    # --- 5. rating B11/B17 (coerenti con i sotto-grade calcolati) -----------------
+    # --- 5. rating B11/B14/B17 (coerenti con i sotto-grade calcolati) -----------------
     from openpyxl import load_workbook
 
     ratings = {
         "reddituale": metrics["ratings"].get("reddituale"),
+        "finanziaria": metrics["ratings"].get("finanziaria"),
         "patrimoniale": metrics["ratings"].get("patrimoniale"),
     }
     wb = load_workbook(filename=str(editable), data_only=False)

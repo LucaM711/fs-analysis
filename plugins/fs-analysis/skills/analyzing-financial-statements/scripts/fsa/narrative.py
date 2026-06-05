@@ -32,9 +32,10 @@ TEXT_CELLS: dict[str, str] = {
     "grade_fido": "C46",
 }
 
-# Rating scritti come valore (B14 resta formula).
+# Rating scritti come valore.
 RATING_CELLS: dict[str, str] = {
     "reddituale": "B11",
+    "finanziaria": "B14",
     "patrimoniale": "B17",
 }
 
