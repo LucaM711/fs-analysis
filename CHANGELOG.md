@@ -1,3 +1,9 @@
+## [1.0.2](https://github.com/LucaM711/fs-analysis/compare/1.0.1...1.0.2) (2026-06-08)
+
+### Bug Fixes
+
+* update financial statement analysis template to improve accuracy ([24451bc](https://github.com/LucaM711/fs-analysis/commit/24451bc89845499aa166d0c5d1985cc8686d3af8))
+
 ## [1.0.1](https://github.com/LucaM711/fs-analysis/compare/1.0.0...1.0.1) (2026-06-05)
 
 ### Bug Fixes
