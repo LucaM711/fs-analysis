@@ -32,6 +32,7 @@ Il layout del report **non cambia mai**: l'engine scrive solo celle predefinite.
   - [references/mapping.md](references/mapping.md) — voci sporche → chiavi canoniche, regole IT GAAP, vincoli di quadratura.
   - [references/indices.md](references/indices.md) — indici, grade, fido, rating, bande interpretative.
   - [references/output-format.md](references/output-format.md) — celle scritte e budget dei testi.
+  - [references/narrative.md](references/narrative.md) — struttura dei contenuti delle 4 analisi testuali.
 
 ## Workflow
 Copia questa checklist e aggiornala mentre procedi:
@@ -85,8 +86,9 @@ lunghezza per blocco). NON ricalcolare nulla: i numeri vengono dal modello.
 
 ### 6. Scrivi le 4 analisi → `analysis.json`
 Scrivi un JSON con le chiavi `economico`, `finanziario_patrimoniale`, `sintesi`,
-`grade_fido`, rispettando i budget di
-[references/output-format.md](references/output-format.md) e ancorando ogni
+`grade_fido`. Per la **struttura dei contenuti** di ciascun blocco segui
+[references/narrative.md](references/narrative.md); rispetta i budget di
+[references/output-format.md](references/output-format.md) e ancora ogni
 affermazione ai numeri di `metrics.json`. Esempio:
 ```json
 {

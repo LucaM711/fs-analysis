@@ -44,10 +44,10 @@ Tre aree con punteggio **1..5** (1 = migliore) e relativa etichetta:
 | 5 | Molto Critica |
 
 - **Reddituale** (`sub_grade_reddituale`) → cella Report `B11`.
-- **Finanziaria** (`sub_grade_finanziaria`) → cella `B14` (gia' formula nel modello).
+- **Finanziaria** (`sub_grade_finanziaria`) → cella `B14`.
 - **Patrimoniale** (`sub_grade_patrimoniale`) → cella `B17`.
 
-`build_report.py` scrive automaticamente `B11`/`B17` dai sotto-grade calcolati: nel
+`build_report.py` scrive automaticamente `B11`/`B14`/`B17` dai sotto-grade calcolati: nel
 testo usare le etichette coerenti (campo `ratings` di `metrics.json`).
 
 ## Fido massimo

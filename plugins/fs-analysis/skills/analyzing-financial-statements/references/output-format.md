@@ -18,7 +18,7 @@ qui sotto; ogni altra cella e' calcolata da formule e non va toccata.
 | Cella | Origine |
 |---|---|
 | `B11` | rating Reddituale (da `sub_grade_reddituale`) |
-| `B14` | rating Finanziaria — **formula del modello, non si scrive** |
+| `B14` | rating Finanziaria (da `sub_grade_finanziaria`) |
 | `B17` | rating Patrimoniale (da `sub_grade_patrimoniale`) |
 
 ## Budget di lunghezza
