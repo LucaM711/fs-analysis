@@ -25,14 +25,26 @@ from fsa import mapping, model  # noqa: E402
 def dump_xlsx(path: Path) -> None:
     from openpyxl import load_workbook
 
-    wb = load_workbook(filename=str(path), data_only=True)
-    print(f"== XLSX: {path.name} | fogli: {wb.sheetnames} ==")
-    for ws in wb.worksheets:
-        print(f"\n--- foglio '{ws.title}' (dim {ws.dimensions}) ---")
-        for row in ws.iter_rows():
-            for cell in row:
-                if cell.value is not None:
-                    print(f"{cell.coordinate}\t{cell.value!r}")
+    # read_only: streaming senza caricare stili — regge anche export molto grandi.
+    wb = load_workbook(filename=str(path), data_only=True, read_only=True)
+    try:
+        print(f"== XLSX: {path.name} | fogli: {wb.sheetnames} ==")
+        for ws in wb.worksheets:
+            try:
+                dims = ws.calculate_dimension()
+            except ValueError:  # metadati di dimensione assenti nel foglio
+                dims = "?"
+            print(f"\n--- foglio '{ws.title}' (dim {dims}) ---")
+            lines = [
+                f"{cell.coordinate}\t{cell.value!r}"
+                for row in ws.iter_rows()
+                for cell in row
+                if cell.value is not None
+            ]
+            if lines:
+                print("\n".join(lines))
+    finally:
+        wb.close()
 
 
 def dump_pdf(path: Path) -> None:
