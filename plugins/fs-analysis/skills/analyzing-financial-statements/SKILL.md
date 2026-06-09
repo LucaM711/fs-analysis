@@ -20,9 +20,11 @@ esportato in PDF, piu' l'XLSX editabile per gli aggiustamenti dell'operatore.
 Il layout del report **non cambia mai**: l'engine scrive solo celle predefinite.
 
 ## Percorsi e dipendenze
-- Script: `${CLAUDE_PLUGIN_ROOT}/skills/analyzing-financial-statements/scripts/`
-  (in sviluppo locale: la cartella `scripts/` di questa skill). Comodo: imposta
-  `SKILL_DIR="${CLAUDE_PLUGIN_ROOT}/skills/analyzing-financial-statements"`.
+- Gli script stanno in `scripts/` **accanto a questo SKILL.md**. Imposta `SKILL_DIR`
+  al percorso assoluto di quella cartella, a seconda della superficie:
+  - **Plugin Claude Code**: `SKILL_DIR="$CLAUDE_PLUGIN_ROOT/skills/analyzing-financial-statements"`.
+  - **Skill su claude.ai o uso locale** (nessun `CLAUDE_PLUGIN_ROOT`): `SKILL_DIR` =
+    la cartella da cui hai letto questo SKILL.md.
 - Python: `pip install openpyxl` (obbligatorio); `pip install pdfplumber` (opzionale,
   per estrarre testo/tabelle da PDF digitali).
 - Rendering PDF: **LibreOffice** (`soffice`). Se manca in locale:
