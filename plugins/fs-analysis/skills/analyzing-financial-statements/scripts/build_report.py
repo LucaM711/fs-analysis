@@ -105,10 +105,10 @@ def main() -> int:
     }
     wb = load_workbook(filename=str(editable), data_only=False)
     narrative.inject(wb, ratings=ratings)
+    budgets = narrative.budgets(wb)
     wb.save(str(editable))
 
     # --- 6. output -----------------------------------------------------------------
-    budgets = narrative.budgets(load_workbook(filename=str(editable), data_only=False))
     metrics["text_budgets"] = budgets
     (args.out_dir / "metrics.json").write_text(
         json.dumps(metrics, ensure_ascii=False, indent=2, default=str), encoding="utf-8"
