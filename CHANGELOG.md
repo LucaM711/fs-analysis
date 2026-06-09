@@ -1,3 +1,14 @@
+## [1.1.0](https://github.com/LucaM711/fs-analysis/compare/1.0.3...1.1.0) (2026-06-09)
+
+### Features
+
+* added financial statement narrative to enhance comments and textual analysis ([d63d7a3](https://github.com/LucaM711/fs-analysis/commit/d63d7a35598dc44eac97cefc72588d9db2a2f08e))
+* enhance financial indices descriptions for clarity and detail ([1bbc5cd](https://github.com/LucaM711/fs-analysis/commit/1bbc5cd491604062f1bc93d0912d2dd4c464be8e))
+
+### Bug Fixes
+
+* update financial statement analysis template setting decimal notation according to the italian standard ([9027060](https://github.com/LucaM711/fs-analysis/commit/90270603cbcb62647fd749225d6bb7ad970b0e61))
+
 ## [1.0.3](https://github.com/LucaM711/fs-analysis/compare/1.0.2...1.0.3) (2026-06-08)
 
 ### Bug Fixes
