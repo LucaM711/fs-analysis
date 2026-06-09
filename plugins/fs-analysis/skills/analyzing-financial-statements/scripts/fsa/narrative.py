@@ -18,6 +18,8 @@ import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
+from openpyxl.utils import get_column_letter
+
 from . import mapping
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -74,8 +76,6 @@ def capacity(ws: "Worksheet", anchor: str) -> Capacity:
         min_row, max_row, min_col, max_col = r, r, c, c
     else:
         min_row, max_row, min_col, max_col = rng.min_row, rng.max_row, rng.min_col, rng.max_col
-
-    from openpyxl.utils import get_column_letter
 
     width_chars = 0.0
     for col in range(min_col, max_col + 1):
