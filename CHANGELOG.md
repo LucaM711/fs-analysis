@@ -1,3 +1,15 @@
+## [1.1.2](https://github.com/LucaM711/fs-analysis/compare/1.1.1...1.1.2) (2026-06-09)
+
+### Performance improvements
+
+* compute text budgets from the in-memory workbook ([314b567](https://github.com/LucaM711/fs-analysis/commit/314b567ab4a68a5cbb958b800b82fcd2dcd31fd1))
+* reuse persistent LibreOffice profile across headless invocations ([96c1eff](https://github.com/LucaM711/fs-analysis/commit/96c1eff0a3b6d5e1d91ad408145d8a9de6810d1b))
+* stream xlsx dump in read-only mode in ingest ([2e29a03](https://github.com/LucaM711/fs-analysis/commit/2e29a03b8a263530cbfed35e5103fa7213326f91))
+
+### Refactoring
+
+* hoist get_column_letter import to module level ([b7d850b](https://github.com/LucaM711/fs-analysis/commit/b7d850beb174ff75cda0042d36ce954654f678f2))
+
 ## [1.1.1](https://github.com/LucaM711/fs-analysis/compare/1.1.0...1.1.1) (2026-06-09)
 
 ### Revert previous changes
