@@ -2,7 +2,7 @@
 # Questo non e' un pacchetto PyPI: l'engine vive dentro il plugin e i test lo
 # importano via tests/conftest.py. Poetry serve solo per ambiente, task e versione.
 name = "fs-analysis"
-version = "1.1.2"
+version = "1.1.3"
 description = "Plugin Claude Code per l'analisi di bilancio: riclassificazione (principi contabili italiani), quadratura al centesimo, indici/grade/fido e report a layout fisso (XLSX + PDF)."
 authors = ["Luca Mambelli <luca.mambelli1i@gmail.com>"]
 license = "Apache-2.0"

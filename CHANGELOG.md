@@ -1,3 +1,9 @@
+## [1.1.3](https://github.com/LucaM711/fs-analysis/compare/1.1.2...1.1.3) (2026-06-09)
+
+### Bug Fixes
+
+* make script paths portable across plugin and claude.ai Skill surfaces ([5ecb2fe](https://github.com/LucaM711/fs-analysis/commit/5ecb2fe3b541ed10ab3e855618606dcc1ca1c0df))
+
 ## [1.1.2](https://github.com/LucaM711/fs-analysis/compare/1.1.1...1.1.2) (2026-06-09)
 
 ### Performance improvements
