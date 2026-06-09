@@ -1,3 +1,13 @@
+## [1.1.1](https://github.com/LucaM711/fs-analysis/compare/1.1.0...1.1.1) (2026-06-09)
+
+### Revert previous changes
+
+* restore template.xlsx to version before column removal ([aa7720f](https://github.com/LucaM711/fs-analysis/commit/aa7720fd9c427cb13ed077ff04690ca56de5fe99))
+
+### General maintenance
+
+* update financial statement analysis template for improved accuracy ([404ec19](https://github.com/LucaM711/fs-analysis/commit/404ec190425faa36e7a5e3a1e37c42ba7b535b79))
+
 ## [1.1.0](https://github.com/LucaM711/fs-analysis/compare/1.0.3...1.1.0) (2026-06-09)
 
 ### Features
