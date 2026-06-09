@@ -8,8 +8,11 @@ locale. Due operazioni:
   PDF resterebbero a zero).
 * :func:`to_pdf` esporta un ``.xlsx`` in PDF rispettando area di stampa e scala.
 
-Il ricalcolo forzato si ottiene con un profilo utente temporaneo che imposta la
-modalita' di ricalcolo a "sempre" (``registrymodifications.xcu``).
+Il ricalcolo forzato si ottiene con un profilo utente dedicato che imposta la
+modalita' di ricalcolo a "sempre" (``registrymodifications.xcu``). Il profilo e'
+persistente e viene riusato fra le invocazioni: il bootstrap di un profilo nuovo
+e' il costo dominante di ogni run headless (secondi per invocazione). In caso di
+profilo corrotto od occupato si ritenta automaticamente con un profilo pulito.
 
 Fallback su macOS: se LibreOffice non c'e' ma e' presente Microsoft Excel, si usa
 quest'ultimo via AppleScript (solo locale).
@@ -78,6 +81,55 @@ def _profile_with_recalc(base: str) -> str:
     return str(profile)
 
 
+def _persistent_profile_root() -> Path:
+    """Cartella del profilo persistente (override: ``FSA_LO_PROFILE``)."""
+    env = os.environ.get("FSA_LO_PROFILE")
+    if env:
+        return Path(env)
+    uid = os.getuid() if hasattr(os, "getuid") else os.environ.get("USERNAME", "user")
+    return Path(tempfile.gettempdir()) / f"fsa-lo-profile-{uid}"
+
+
+def _ensure_persistent_profile() -> str:
+    """Prepara (o riusa) il profilo persistente con ricalcolo 'sempre'."""
+    root = _persistent_profile_root()
+    xcu = root / "user" / "registrymodifications.xcu"
+    try:
+        existing = xcu.read_text(encoding="utf-8")
+    except OSError:
+        existing = ""
+    # LibreOffice riscrive il file a fine run preservando gli item 'fuse': basta
+    # verificare il marcatore senza azzerare il profilo gia' bootstrappato.
+    if "OOXMLRecalcMode" not in existing:
+        xcu.parent.mkdir(parents=True, exist_ok=True)
+        xcu.write_text(_RECALC_XCU, encoding="utf-8")
+    return str(root)
+
+
+def _convert(soffice: str, source: Path, convert_to: str, out_ext: str, dest: Path, what: str) -> Path:
+    """Conversione headless con profilo riusato; un retry con profilo pulito."""
+    with tempfile.TemporaryDirectory() as tmp:
+        outdir = Path(tmp) / "out"
+        outdir.mkdir()
+        produced = outdir / (source.stem + out_ext)
+        args = ["--convert-to", convert_to, "--outdir", str(outdir), str(source)]
+
+        try:
+            profile = _ensure_persistent_profile()
+        except OSError:  # profilo persistente non creabile: usa un profilo usa-e-getta
+            profile = _profile_with_recalc(tmp)
+        proc = _run_soffice(soffice, args, profile)
+        if proc.returncode != 0 or not produced.exists():
+            shutil.rmtree(_persistent_profile_root(), ignore_errors=True)
+            proc = _run_soffice(soffice, args, _profile_with_recalc(tmp))
+            if proc.returncode != 0 or not produced.exists():
+                raise RenderError(
+                    f"{what} LibreOffice fallito (rc={proc.returncode}).\n{proc.stderr or proc.stdout}"
+                )
+        shutil.copyfile(produced, dest)
+    return dest
+
+
 def recalc(xlsx_path: str | Path) -> Path:
     """Ricalcola le formule e ri-salva l'``.xlsx`` in place. Ritorna il path."""
     xlsx_path = Path(xlsx_path).resolve()
@@ -86,23 +138,7 @@ def recalc(xlsx_path: str | Path) -> Path:
         if have_excel():
             return _excel_recalc(xlsx_path)
         raise RenderError(_no_engine_msg())
-
-    with tempfile.TemporaryDirectory() as tmp:
-        profile = _profile_with_recalc(tmp)
-        outdir = Path(tmp) / "out"
-        outdir.mkdir()
-        proc = _run_soffice(
-            soffice,
-            ["--convert-to", "xlsx:Calc MS Excel 2007 XML", "--outdir", str(outdir), str(xlsx_path)],
-            profile,
-        )
-        produced = outdir / (xlsx_path.stem + ".xlsx")
-        if proc.returncode != 0 or not produced.exists():
-            raise RenderError(
-                f"Ricalcolo LibreOffice fallito (rc={proc.returncode}).\n{proc.stderr or proc.stdout}"
-            )
-        shutil.copyfile(produced, xlsx_path)
-    return xlsx_path
+    return _convert(soffice, xlsx_path, "xlsx:Calc MS Excel 2007 XML", ".xlsx", xlsx_path, "Ricalcolo")
 
 
 def to_pdf(xlsx_path: str | Path, pdf_path: str | Path) -> Path:
@@ -115,23 +151,7 @@ def to_pdf(xlsx_path: str | Path, pdf_path: str | Path) -> Path:
         if have_excel():
             return _excel_pdf(xlsx_path, pdf_path)
         raise RenderError(_no_engine_msg())
-
-    with tempfile.TemporaryDirectory() as tmp:
-        profile = _profile_with_recalc(tmp)
-        outdir = Path(tmp) / "out"
-        outdir.mkdir()
-        proc = _run_soffice(
-            soffice,
-            ["--convert-to", "pdf:calc_pdf_Export", "--outdir", str(outdir), str(xlsx_path)],
-            profile,
-        )
-        produced = outdir / (xlsx_path.stem + ".pdf")
-        if proc.returncode != 0 or not produced.exists():
-            raise RenderError(
-                f"Export PDF LibreOffice fallito (rc={proc.returncode}).\n{proc.stderr or proc.stdout}"
-            )
-        shutil.copyfile(produced, pdf_path)
-    return pdf_path
+    return _convert(soffice, xlsx_path, "pdf:calc_pdf_Export", ".pdf", pdf_path, "Export PDF")
 
 
 def ensure_fonts(fonts_dir: str | Path) -> list[str]:
