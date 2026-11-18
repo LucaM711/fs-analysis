@@ -82,7 +82,7 @@ def main() -> int:
         return 1
 
     suffix = args.input.suffix.lower()
-    if suffix in (".xlsx", ".xlsm", ".xls"):
+    if suffix in (".xlsx", ".xlsm"):
         dump_xlsx(args.input)
     elif suffix == ".pdf":
         dump_pdf(args.input)

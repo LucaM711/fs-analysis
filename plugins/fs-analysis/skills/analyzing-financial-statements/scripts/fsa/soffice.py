@@ -116,11 +116,14 @@ def _convert(soffice: str, source: Path, convert_to: str, out_ext: str, dest: Pa
 
         try:
             profile = _ensure_persistent_profile()
+            used_persistent = True
         except OSError:  # profilo persistente non creabile: usa un profilo usa-e-getta
             profile = _profile_with_recalc(tmp)
+            used_persistent = False
         proc = _run_soffice(soffice, args, profile)
         if proc.returncode != 0 or not produced.exists():
-            shutil.rmtree(_persistent_profile_root(), ignore_errors=True)
+            if used_persistent:  # forse corrotto: si ricrea al prossimo run
+                shutil.rmtree(_persistent_profile_root(), ignore_errors=True)
             proc = _run_soffice(soffice, args, _profile_with_recalc(tmp))
             if proc.returncode != 0 or not produced.exists():
                 raise RenderError(
