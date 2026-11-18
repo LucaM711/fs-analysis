@@ -7,6 +7,8 @@ import copy
 import pytest
 from fsa.model import CanonicalBalance, ValidationError
 
+from tests.conftest import with_years
+
 
 def test_load_sample(sample_data):
     bal = CanonicalBalance.from_dict(sample_data)
@@ -58,3 +60,34 @@ def test_rounding_to_cents(sample_data):
     data["conto_economico"]["ebit"]["y0"] = 200000.12345
     bal = CanonicalBalance.from_dict(data)
     assert bal.ce("ebit", "y0") == 200000.12
+
+
+def test_n_years_loaded(sample_data):
+    bal = CanonicalBalance.from_dict(with_years(sample_data, 5))
+    assert bal.years == ("y0", "y1", "y2", "y3", "y4")
+    assert bal.ce("ebit", "y4") == round(150000 * 1.04, 2)
+
+
+def test_partial_year_rejected(sample_data):
+    # una sola voce con y2 non deve attivare un esercizio pieno di zeri
+    data = copy.deepcopy(sample_data)
+    data["conto_economico"]["ebit"]["y2"] = 1000
+    with pytest.raises(ValidationError, match="y2 mancante"):
+        CanonicalBalance.from_dict(data)
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), True])
+def test_non_finite_and_bool_rejected(sample_data, bad):
+    data = copy.deepcopy(sample_data)
+    data["stato_patrimoniale"]["tfr"]["y0"] = bad
+    with pytest.raises(ValidationError):
+        CanonicalBalance.from_dict(data)
+
+
+def test_window_shifts_pair(sample_data):
+    bal = CanonicalBalance.from_dict(with_years(sample_data, 4))
+    w = bal.window(2)
+    assert w.years == ("y0", "y1")
+    assert w.meta["anno"] == bal.meta["anno"] - 2
+    assert w.ce("ebit", "y0") == bal.ce("ebit", "y2")
+    assert w.sp("totale_attivo", "y1") == bal.sp("totale_attivo", "y3")

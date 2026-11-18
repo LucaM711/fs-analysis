@@ -12,7 +12,8 @@ La skill ragiona cosi':
    2424/2425 c.c.) mappandole sulle tabelle del modello;
 3. **verifica la quadratura al centesimo** di Attivo e Passivo (con riconciliazione
    dei soli residui di arrotondamento);
-4. calcola **indici, grade e fido** con il modello Excel (unica fonte di verita') e
+4. calcola **indici, grade e fido** con il modello Excel (unica fonte di verita'), per
+   ogni esercizio caricato (2 o piu': con 3+ anche l'**andamento pluriennale**), e
    redige le **4 analisi** (Economico, Finanziario e Patrimoniale, Sintesi, Grade e
    Fido);
 5. inietta i testi nelle celle predefinite ed esporta il **PDF**; il **formato del
@@ -65,7 +66,7 @@ Poi basta caricare un bilancio e chiedere l'analisi: la skill si attiva da sola.
 ```bash
 SKILL=plugins/fs-analysis/skills/analyzing-financial-statements
 # 1) assist estrazione + schema
-python $SKILL/scripts/ingest.py BILANCIO.pdf --skeleton normalized.json --anno 2024
+python $SKILL/scripts/ingest.py BILANCIO.pdf --skeleton normalized.json --anno 2024 --esercizi 2
 # 2) compila normalized.json (mappatura) e verifica + popola + metriche
 python $SKILL/scripts/build_report.py normalized.json --out-dir fsa-output
 # 3) scrivi analysis.json (4 blocchi) ed esporta il PDF

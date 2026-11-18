@@ -124,3 +124,41 @@ def read_back(recalced_xlsx: str | Path) -> dict[str, Any]:
         "grade_fido": grade_fido,
         "ratings": ratings,
     }
+
+
+def _at(section: dict[str, Any], year: str) -> dict[str, Any]:
+    """Valori di un solo anno; le variazioni (scalari) valgono solo per y0 vs y1."""
+    return {
+        k: v[year] if isinstance(v, dict) else v
+        for k, v in section.items()
+        if isinstance(v, dict) or year == "y0"
+    }
+
+
+def storico(windows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Serie annuale dal piu' recente, da ``read_back`` delle coppie di esercizi.
+
+    ``windows[k]`` e' la lettura della coppia (anno-k, anno-k-1): ogni anno prende i
+    valori y0 della propria coppia (con variazioni, grade e rating). L'anno piu'
+    vecchio compare solo come y1 dell'ultima coppia: ha gli indici ma non variazioni,
+    grade ne' rating, perche' manca l'esercizio precedente con cui confrontarlo.
+    """
+    out = [
+        {
+            "anno": int(w["meta"]["anno"]),
+            "economico": _at(w["economico"], "y0"),
+            "finanziario_patrimoniale": _at(w["finanziario_patrimoniale"], "y0"),
+            "grade_fido": w["grade_fido"],
+            "ratings": w["ratings"],
+        }
+        for w in windows
+    ]
+    last = windows[-1]
+    out.append(
+        {
+            "anno": int(last["meta"]["anno"]) - 1,
+            "economico": _at(last["economico"], "y1"),
+            "finanziario_patrimoniale": _at(last["finanziario_patrimoniale"], "y1"),
+        }
+    )
+    return out

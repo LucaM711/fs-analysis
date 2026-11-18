@@ -15,6 +15,25 @@ e i *limiti di lunghezza* vedi [output-format.md](output-format.md); per il
 - **Ancorare ogni affermazione a un numero** e mantenere coerenza con il rating mostrato
   nelle celle B11/B14/B17 (campo `ratings` di `metrics.json`).
 
+## Storico pluriennale (3 o piu' esercizi)
+`metrics.json.storico` e' una lista, dal piu' recente al piu' vecchio, con un elemento
+per esercizio: `anno`, `economico`, `finanziario_patrimoniale` (valori di quell'anno,
+con le variazioni `*_var` rispetto all'anno prima) e, tranne per l'esercizio piu'
+vecchio, `grade_fido` e `ratings` di quell'anno. Con 2 soli esercizi lo storico
+coincide con y0/y1: scrivere come sotto, senza la parte di andamento.
+
+Con 3 o piu' esercizi **ogni blocco segue lo stesso ordine**:
+1. **Andamento** (circa 1/4 del budget): la traiettoria sull'intero periodo, dal primo
+   all'ultimo anno, citando gli estremi e le svolte (anni di picco, inversioni di
+   tendenza, perdite). Usare solo valori e `*_var` presenti in `storico`: **non**
+   calcolare medie o tassi di crescita pluriennali.
+2. **Ultimi due anni** (il resto del budget): l'analisi di dettaglio y0 vs y1 descritta
+   per ciascun blocco qui sotto, letta alla luce dell'andamento (conferma, inversione
+   o accelerazione del trend).
+
+Il budget di ogni blocco non cambia con il numero di esercizi: con molti anni citare
+solo i passaggi che contano, non ogni anno.
+
 ---
 
 ## 1. `economico` — Ambito Economico (cella `A34:B43`)
@@ -61,3 +80,4 @@ Valutazione sintetica e prudenziale sull'assegnazione di Grade e Fido commercial
 | `finanziario_patrimoniale` | `finanziario_patrimoniale.*` (patrimonio_netto, debiti_finanziari, disponibilita_liquide, rapporto_indebitamento, pfn, pfn_ebitda) |
 | `sintesi` | sintesi trasversale dei due blocchi precedenti + `grade_fido` |
 | `grade_fido` | `grade_fido.*` (grade_finale, fido_massimo, fido_label, dimensione_impresa), `ratings.*` |
+| andamento (tutti i blocchi, 3+ esercizi) | `storico[*]` (stesse chiavi per anno; `grade_fido.grade_finale` per l'evoluzione del grade) |

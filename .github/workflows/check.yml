@@ -91,6 +91,11 @@ jobs:
       - name: Restore Development Environment
         run: poetry install
 
+      # Senza LibreOffice i test end-to-end sul template vengono saltati.
+      - name: Install LibreOffice
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-calc
+
       - name: Test
         shell: bash
         run: poetry run poe test

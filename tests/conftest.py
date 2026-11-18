@@ -27,3 +27,13 @@ def template_path() -> Path:
 @pytest.fixture
 def sample_data() -> dict:
     return json.loads(SAMPLE.read_text(encoding="utf-8"))
+
+
+def with_years(data: dict, n: int) -> dict:
+    """Estende il campione a ``n`` esercizi: y2..y{n-1} = y1 * (1 + k/100), quindi quadrano."""
+    out = json.loads(json.dumps(data))
+    for section in ("conto_economico", "stato_patrimoniale"):
+        for cell in out[section].values():
+            for k in range(2, n):
+                cell[f"y{k}"] = round(cell["y1"] * (1 + k / 100), 2)
+    return out

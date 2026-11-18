@@ -11,7 +11,8 @@ Pipeline:
        -> se non quadra: stampa il dettaglio ed esce con codice 2 (l'operatore
           corregge la mappatura). Piccoli residui di arrotondamento sono assorbiti.
     3. popola il foglio Input del modello e salva l'xlsx editabile
-    4. ricalcola con LibreOffice e LEGGE indici/grade/fido (fonte di verita': il modello)
+    4. ricalcola con LibreOffice e LEGGE indici/grade/fido (fonte di verita': il modello);
+       con N esercizi ricalcola anche ogni coppia piu' vecchia -> ``storico``
     5. scrive i rating Reddituale/Patrimoniale (B11/B17) e salva
     6. emette metrics.json + verification.json e stampa il riepilogo per l'agente
 """
@@ -22,6 +23,7 @@ import argparse
 import json
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -90,10 +92,19 @@ def main() -> int:
     # --- 4. ricalcolo + lettura metriche ------------------------------------------
     try:
         soffice.recalc(editable)
+        metrics = metrics_mod.read_back(editable)
+        # Storico: il modello confronta 2 esercizi, quindi una lettura per ogni coppia.
+        # shortcut: un avvio di LibreOffice per coppia (~secondi), batch se N diventa grande
+        windows = [metrics]
+        with tempfile.TemporaryDirectory() as tmp:
+            for k in range(1, len(balance.years) - 1):
+                pair = populate.build_populated(args.template, balance.window(k), Path(tmp) / f"y{k}.xlsx")
+                soffice.recalc(pair)
+                windows.append(metrics_mod.read_back(pair))
     except soffice.RenderError as exc:
         print(f"[ricalcolo] {exc}", file=sys.stderr)
         return 3
-    metrics = metrics_mod.read_back(editable)
+    metrics["storico"] = metrics_mod.storico(windows)
 
     # --- 5. rating B11/B14/B17 (coerenti con i sotto-grade calcolati) -----------------
     from openpyxl import load_workbook
@@ -123,6 +134,8 @@ def main() -> int:
     print(f"  Rating Reddituale  : {ratings['reddituale']}")
     print(f"  Rating Finanziaria : {metrics['ratings'].get('finanziaria')}")
     print(f"  Rating Patrimoniale: {ratings['patrimoniale']}")
+    anni = [s["anno"] for s in metrics["storico"]]
+    print(f"  Storico            : {len(anni)} esercizi ({anni[0]}..{anni[-1]})")
     print("\n== BUDGET TESTI (caratteri massimi per blocco) ==")
     for block, b in budgets.items():
         print(f"  {block:28s}: max ~{b['max_chars']} char, {b['lines']} righe")

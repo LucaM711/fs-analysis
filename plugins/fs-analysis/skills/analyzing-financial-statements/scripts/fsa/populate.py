@@ -38,7 +38,9 @@ def populate_input(wb: "Workbook", balance: "CanonicalBalance") -> None:
 
     # Conto Economico e Stato Patrimoniale, colonna per anno.
     for year in balance.years:
-        col = mapping.YEAR_COLUMNS[year]
+        col = mapping.YEAR_COLUMNS.get(year)
+        if col is None:  # il modello ha 3 colonne anno: i piu' vecchi vanno solo nello storico
+            break
         for key, row in mapping.CONTO_ECONOMICO_ROWS.items():
             ws[f"{col}{row}"] = balance.ce(key, year)
         for key, row in mapping.STATO_PATRIMONIALE_ROWS.items():

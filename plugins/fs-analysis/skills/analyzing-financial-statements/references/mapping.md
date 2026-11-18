@@ -14,7 +14,11 @@ quelle elencate qui.
 ## Regole generali
 - Importi in **euro a 2 decimali**, segno positivo per costi e ricavi (i costi NON
   vanno messi negativi: il modello li sottrae da solo).
-- `y0` = ultimo esercizio, `y1` = precedente. Servono **2 esercizi**.
+- `y0` = ultimo esercizio, `y1` = precedente, `y2`, `y3`, ... gli esercizi ancora
+  precedenti. Servono **almeno 2 esercizi**; inserire tutti quelli disponibili.
+  Ogni voce deve avere **tutti** gli esercizi (`y0`..`yN-1`): se una voce ha `y3`,
+  devono averla tutte. Gli esercizi oltre `y1` alimentano lo **storico** (andamento
+  pluriennale): il Report mostra sempre e solo gli ultimi 2.
 - Se una voce di dettaglio non esiste nel bilancio, impostarla a `0` (non lasciarla
   nulla), assicurandosi che i totali tornino.
 - Non inventare numeri: usare i totali di bilancio come ancore e mappare i dettagli

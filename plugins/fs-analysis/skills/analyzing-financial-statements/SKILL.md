@@ -42,10 +42,10 @@ Copia questa checklist e aggiornala mentre procedi:
 ```
 Analisi di bilancio:
 - [ ] 1. Identifica il file e il tipo (xlsx / pdf digitale / pdf scansione)
-- [ ] 2. Estrai voci + metadati dei 2 esercizi
+- [ ] 2. Estrai voci + metadati di tutti gli esercizi (min. 2)
 - [ ] 3. Riclassifica → normalized.json
 - [ ] 4. Quadratura al centesimo (build_report.py) — checkpoint operatore
-- [ ] 5. Leggi metrics.json (indici/grade/fido) + budget testi
+- [ ] 5. Leggi metrics.json (indici/grade/fido, storico) + budget testi
 - [ ] 6. Scrivi le 4 analisi → analysis.json
 - [ ] 7. Esporta (render_pdf.py)
 - [ ] 8. Consegna PDF + XLSX
@@ -55,12 +55,13 @@ Analisi di bilancio:
 Genera anche lo schema vuoto e dumpa il contenuto grezzo:
 ```bash
 python "$SKILL_DIR/scripts/ingest.py" BILANCIO.(xlsx|pdf) \
-    --skeleton normalized.json --anno <ULTIMO_ANNO>
+    --skeleton normalized.json --anno <ULTIMO_ANNO> --esercizi <N>
 ```
 - **XLSX / PDF digitale**: leggi il dump di `ingest.py`.
 - **PDF scansione**: leggi direttamente le pagine con le tue capacita' multimodali
   (l'OCR automatico potrebbe non bastare).
-Raccogli i **2 esercizi** (ultimo + precedente) e i metadati: ragione sociale, anno,
+Raccogli **tutti gli esercizi disponibili** (almeno 2: ultimo + precedente; con un
+export pluriennale o piu' bilanci anche 3 o piu', senza un limite fisso) e i metadati: ragione sociale, anno,
 P.IVA, ATECO, forma giuridica, sede, numero medio dipendenti, debiti v/fornitori,
 crediti v/clienti.
 
@@ -83,15 +84,20 @@ python "$SKILL_DIR/scripts/build_report.py" normalized.json --out-dir fsa-output
 
 ### 5. Leggi le metriche
 Leggi `fsa-output/metrics.json`: indici (economico, finanziario/patrimoniale),
-`grade_fido` (dimensione, grade, fido), `ratings`, e `text_budgets` (limiti di
-lunghezza per blocco). NON ricalcolare nulla: i numeri vengono dal modello.
+`grade_fido` (dimensione, grade, fido), `ratings`, `text_budgets` (limiti di
+lunghezza per blocco) e `storico`: un elemento per esercizio, dal piu' recente, con
+gli stessi indici (e grade/rating, tranne l'esercizio piu' vecchio), ricalcolati dal
+modello su ogni coppia di anni consecutivi. NON ricalcolare nulla: i numeri vengono
+dal modello.
 
 ### 6. Scrivi le 4 analisi → `analysis.json`
 Scrivi un JSON con le chiavi `economico`, `finanziario_patrimoniale`, `sintesi`,
 `grade_fido`. Per la **struttura dei contenuti** di ciascun blocco segui
 [references/narrative.md](references/narrative.md); rispetta i budget di
 [references/output-format.md](references/output-format.md) e ancora ogni
-affermazione ai numeri di `metrics.json`. Esempio:
+affermazione ai numeri di `metrics.json`. Con 3 o piu' esercizi ogni blocco apre con
+l'**andamento pluriennale** (da `storico`) e si chiude sulle **performance degli
+ultimi due anni**. Esempio:
 ```json
 {
   "economico": "...",

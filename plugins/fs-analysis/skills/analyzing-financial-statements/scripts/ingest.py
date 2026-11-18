@@ -2,7 +2,7 @@
 """Assiste l'estrazione del bilancio "sporco" e genera lo schema normalized.json.
 
 Uso:
-    python ingest.py BILANCIO.(xlsx|pdf) [--skeleton normalized.skeleton.json] [--anno 2024]
+    python ingest.py BILANCIO.(xlsx|pdf) [--skeleton normalized.json] [--anno 2024] [--esercizi N]
 
 - xlsx: dumpa tutte le celle non vuote di ogni foglio (per assistere la lettura).
 - pdf:  estrae il testo con pdfplumber se disponibile; altrimenti avvisa che il PDF
@@ -75,8 +75,14 @@ def main() -> int:
     ap.add_argument("input", type=Path, help="file di bilancio (.xlsx o .pdf)")
     ap.add_argument("--skeleton", type=Path, help="scrive lo schema normalized.json vuoto")
     ap.add_argument("--anno", type=int, default=None, help="ultimo esercizio (Input!B2)")
+    ap.add_argument(
+        "--esercizi", type=int, default=model.MIN_YEARS, help="esercizi nello schema (y0..yN-1, min 2)"
+    )
     args = ap.parse_args()
 
+    if args.esercizi < model.MIN_YEARS:
+        print(f"--esercizi deve essere almeno {model.MIN_YEARS}", file=sys.stderr)
+        return 1
     if not args.input.exists():
         print(f"File non trovato: {args.input}", file=sys.stderr)
         return 1
@@ -97,7 +103,7 @@ def main() -> int:
 
     if args.skeleton:
         args.skeleton.write_text(
-            json.dumps(model.skeleton(args.anno), ensure_ascii=False, indent=2),
+            json.dumps(model.skeleton(args.anno, args.esercizi), ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
         print(f"\nSchema scritto in: {args.skeleton}")
