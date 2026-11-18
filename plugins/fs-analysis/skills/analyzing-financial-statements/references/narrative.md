@@ -1,83 +1,76 @@
-# Struttura delle 4 analisi testuali (`analysis.json`)
+# Le 4 analisi testuali del PDF (`analysis.json`)
 
-Questa pagina dice **cosa scrivere** in ciascuno dei 4 blocchi. Per *dove* scriverli
-e i *limiti di lunghezza* vedi [output-format.md](output-format.md); per il
-*significato* di indici/grade/fido vedi [indices.md](indices.md).
+Questa pagina dice **cosa scrivere** in ciascuno dei 4 blocchi del report PDF. Per i
+riquadri e i limiti di lunghezza vedi [output-format.md](output-format.md); per il
+significato dei numeri vedi [indices.md](indices.md). In chat valgono le stesse regole
+sui numeri, con una forma piu' libera: vedi [conversation.md](conversation.md).
 
 ## Regole di ferro (valgono per tutti i blocchi)
-- **Numeri solo da `metrics.json`**: ogni cifra (valore, variazione %, indice, grade,
-  fido) e' letta dal modello. Mai inventarli ne' ricalcolarli nel testo.
-- **Prosa semplice in italiano**, registro di merito creditizio. Niente markdown,
-  niente elenchi puntati con simboli: gli elenchi qui sotto sono **guida editoriale**,
-  non il formato di output. Si possono usare a capo (`\n`) per separare 2-3 micro-paragrafi.
-- **Rispettare i budget** di caratteri/righe (vedi `text_budgets` in `metrics.json`).
-  I limiti "una riga / due righe" indicati sotto sono indicativi: prevale sempre il budget.
-- **Ancorare ogni affermazione a un numero** e mantenere coerenza con il rating mostrato
-  nelle celle B11/B14/B17 (campo `ratings` di `metrics.json`).
+- **Numeri solo da `metrics.json`**: ogni cifra (valore, variazione %, indice,
+  punteggio, Z'') e' letta da li'. Mai inventarla o ricalcolarla nel testo.
+- **Prosa semplice in italiano**, registro di analisi di bilancio: descrivere e
+  valutare la situazione dell'azienda, senza raccomandazioni di investimento o di
+  affidamento. Niente markdown ne' elenchi con simboli; si possono usare a capo (`\n`)
+  per separare 2-3 micro-paragrafi.
+- **Rispettare i riquadri**: `render_pdf.py` segnala i testi che non ci stanno
+  (`[avviso capienza]`); in quel caso accorciare e rigenerare. `text_budgets` in
+  `metrics.json` da' la capienza indicativa.
+- **Ancorare ogni affermazione a un numero** ed essere coerenti con i rating
+  (`esercizi[0].punteggio.aree.*.rating`).
 
-## Storico pluriennale (3 o piu' esercizi)
-`metrics.json.storico` e' una lista, dal piu' recente al piu' vecchio, con un elemento
-per esercizio: `anno`, `economico`, `finanziario_patrimoniale` (valori di quell'anno,
-con le variazioni `*_var` rispetto all'anno prima) e, tranne per l'esercizio piu'
-vecchio, `grade_fido` e `ratings` di quell'anno. Con 2 soli esercizi lo storico
-coincide con y0/y1: scrivere come sotto, senza la parte di andamento.
+## Andamento pluriennale (3 o piu' esercizi)
+`metrics.json.esercizi` ha un elemento per anno, dal piu' recente al piu' vecchio. Con
+3 o piu' esercizi **ogni blocco segue lo stesso ordine**:
+1. **Andamento** (circa 1/4 del blocco): la traiettoria dal primo all'ultimo anno,
+   citando gli estremi e le svolte (anni di picco, inversioni, perdite). Usare solo
+   valori e `variazioni` presenti in `esercizi`: **non** calcolare medie o tassi di
+   crescita pluriennali.
+2. **Ultimi due anni** (il resto): l'analisi di dettaglio dell'ultimo esercizio sul
+   precedente descritta qui sotto, letta alla luce dell'andamento.
 
-Con 3 o piu' esercizi **ogni blocco segue lo stesso ordine**:
-1. **Andamento** (circa 1/4 del budget): la traiettoria sull'intero periodo, dal primo
-   all'ultimo anno, citando gli estremi e le svolte (anni di picco, inversioni di
-   tendenza, perdite). Usare solo valori e `*_var` presenti in `storico`: **non**
-   calcolare medie o tassi di crescita pluriennali.
-2. **Ultimi due anni** (il resto del budget): l'analisi di dettaglio y0 vs y1 descritta
-   per ciascun blocco qui sotto, letta alla luce dell'andamento (conferma, inversione
-   o accelerazione del trend).
-
-Il budget di ogni blocco non cambia con il numero di esercizi: con molti anni citare
-solo i passaggi che contano, non ogni anno.
+Con 2 soli esercizi scrivere solo la parte 2. Con molti anni citare solo i passaggi che
+contano, non ogni anno.
 
 ---
 
-## 1. `economico` — Ambito Economico (cella `A34:B43`)
-Andamento della gestione operativa. Ogni elemento ~1 frase:
-- **Fatturato**: valore della produzione dell'ultimo esercizio (`economico.valore_produzione.y0`),
-  valore assoluto dell'anno precedente (`.y1`) e variazione % (`valore_produzione_var`); breve commento.
-- **Redditivita' operativa**: EBITDA (`ebitda`), EBIT (`ebit`, `ebit_var`, `ebit_pct`) e
-  utile netto (`utile`, `utile_var`) confrontati con l'anno precedente, in valore assoluto e %;
-  breve commento. Eventualmente richiamare ROS/ROE/ROI.
-- **Sintesi**: redditivita' complessiva e sostenibilita' del modello economico nel medio-lungo termine.
+## 1. `economico` — Ambito economico
+Andamento della gestione operativa. Circa una frase per elemento:
+- **Fatturato**: valore della produzione dell'ultimo esercizio, del precedente e
+  variazione % (`valori.valore_della_produzione`, `variazioni.valore_della_produzione`).
+- **Redditivita' operativa**: EBITDA, EBIT e utile netto confrontati con l'anno
+  precedente, in valore e in % (`valori.ebitda|ebit|utile_perdita_esercizio`,
+  `indici.ebitda_pct|ebit_pct`); se utile, ROS, ROE e ROI.
+- **Sintesi**: redditivita' complessiva e sostenibilita' del modello economico.
 
-## 2. `finanziario_patrimoniale` — Ambito Finanziario e Patrimoniale (cella `C34:D43`)
-Solidita' patrimoniale, indebitamento e stabilita' finanziaria. E' il blocco con il
-**budget piu' stretto**: massima sintesi, ~1-2 frasi per elemento.
-- **Patrimonio netto**: valore attuale (`patrimonio_netto.y0`), precedente (`.y1`) e variazione %; breve commento.
-- **Indebitamento finanziario**: distinzione breve/lungo termine, valori assoluti e variazioni %
-  (`debiti_finanziari`, `debiti_finanziari_pct`, `rapporto_indebitamento`, `pfn`, `pfn_ebitda`); breve commento.
-- **Disponibilita' liquide**: valore attuale (`disponibilita_liquide`), variazione assoluta e % vs esercizio precedente; breve commento.
-- **Sintesi**: equilibrio patrimoniale, situazione delle disponibilita' liquide e stabilita' finanziaria.
+## 2. `finanziario_patrimoniale` — Ambito finanziario e patrimoniale
+Solidita' patrimoniale, indebitamento e liquidita':
+- **Patrimonio netto**: valore, variazione % e peso sull'attivo
+  (`composizione.totale_patrimonio_netto_su_attivo`).
+- **Indebitamento finanziario**: breve e lungo termine, PFN, PFN/EBITDA, rapporto di
+  indebitamento, copertura degli interessi.
+- **Liquidita'**: disponibilita' liquide, variazione, test acido e current ratio.
+- **Sintesi**: equilibrio patrimoniale e stabilita' finanziaria.
 
-## 3. `sintesi` — Sintesi Generale (cella `A46:B55`)
-Raccoglie i principali elementi emersi (economici e finanziari):
-- **Punti di forza**: evidenze positive (es. calo dell'indebitamento, solidita' patrimoniale, buona liquidita').
-- **Punti di attenzione**: criticita' da monitorare (es. calo dei margini, perdita d'esercizio, contrazione dei ricavi).
-- **Conclusione complessiva**: valutazione integrata, anche in ottica prospettica, della solidita' economico-finanziaria.
+## 3. `sintesi` — Sintesi
+- **Punti di forza**: le evidenze positive principali.
+- **Punti di attenzione**: le criticita' da monitorare.
+- **Conclusione**: valutazione complessiva della solidita' economico-finanziaria.
 
-Il tono complessivo segue la banda di grade (vedi *Bande interpretative* in [indices.md](indices.md)).
-
-## 4. `grade_fido` — Grade e Fido (cella `C46:D55`)
-Valutazione sintetica e prudenziale sull'assegnazione di Grade e Fido commerciale:
-- Tenere conto dell'equilibrio tra redditivita' e struttura finanziaria.
-- Valutare la solvibilita' a breve termine e la sostenibilita' del business.
-- Esprimere un giudizio sintetico ma motivato. Usare il **grade finale** (`grade_fido.grade_finale`,
-  scala 1-10, 1 = migliore), il **fido** (`fido_massimo` / `fido_label`) e la
-  `dimensione_impresa` **cosi' come sono in `metrics.json`** — senza alterarli.
-- Coerenza con i rating delle tre aree (Reddituale/Finanziaria/Patrimoniale).
+## 4. `valutazione` — Valutazione
+Lettura del giudizio sintetico calcolato dall'engine:
+- **Punteggio complessivo** (`punteggio.complessivo`, scala 1-10, 1 = migliore) e
+  `grade`, con la banda di lettura di [indices.md](indices.md#bande-di-lettura).
+- **Rating per area** (reddituale, finanziaria, patrimoniale): quale area sostiene e
+  quale pesa sul giudizio.
+- **Altman Z''** (`altman.z`, `altman.zona`) e, con piu' esercizi, la sua evoluzione.
+- Riportare punteggio, rating e Z'' **cosi' come sono**, senza alterarli.
 
 ---
 
-## Mappa rapida blocco → metriche principali
-| Blocco | Chiavi `metrics.json` di riferimento |
+## Mappa rapida blocco → campi di `esercizi[i]`
+| Blocco | Campi principali |
 |---|---|
-| `economico` | `economico.*` (valore_produzione, ebit, ebitda, utile, ros, roe, roi, *_var, *_pct) |
-| `finanziario_patrimoniale` | `finanziario_patrimoniale.*` (patrimonio_netto, debiti_finanziari, disponibilita_liquide, rapporto_indebitamento, pfn, pfn_ebitda) |
-| `sintesi` | sintesi trasversale dei due blocchi precedenti + `grade_fido` |
-| `grade_fido` | `grade_fido.*` (grade_finale, fido_massimo, fido_label, dimensione_impresa), `ratings.*` |
-| andamento (tutti i blocchi, 3+ esercizi) | `storico[*]` (stesse chiavi per anno; `grade_fido.grade_finale` per l'evoluzione del grade) |
+| `economico` | `valori` (valore_della_produzione, ebitda, ebit, utile_perdita_esercizio), `variazioni`, `indici` (ros, roe, roi, *_pct) |
+| `finanziario_patrimoniale` | `valori` (totale_patrimonio_netto, totale_debiti_finanziari, disponibilita_liquide), `composizione`, `indici` (pfn, pfn_ebitda, rapporto_indebitamento, test_acido, current_ratio) |
+| `sintesi` | i due blocchi precedenti + `punteggio` |
+| `valutazione` | `punteggio` (complessivo, grade, aree), `altman` |

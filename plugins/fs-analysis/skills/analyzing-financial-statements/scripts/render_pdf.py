@@ -1,18 +1,11 @@
 #!/usr/bin/env python3
-"""Inietta le analisi testuali e esporta il foglio ``Report`` in PDF.
+"""Report PDF a layout fisso da ``metrics.json`` + le 4 analisi testuali.
 
 Uso:
-    python render_pdf.py REPORT_EDITABILE.xlsx [--analysis analysis.json] [--out report.pdf]
-
-Pipeline:
-    1. (se --analysis) scrive i 4 blocchi testuali nelle celle del Report
-       (l'xlsx editabile viene aggiornato cosi' l'operatore vede anche il testo)
-    2. ricalcola con LibreOffice (rating-bar, fido, B14, ...)
-    3. genera la copia di rendering (solo Report, formule -> valori)
-    4. esporta in PDF a layout fisso
+    python render_pdf.py fsa-output/metrics.json --analysis analysis.json [--out report.pdf]
 
 analysis.json: {"economico": "...", "finanziario_patrimoniale": "...",
-                "sintesi": "...", "grade_fido": "..."}
+                "sintesi": "...", "valutazione": "..."}
 """
 
 from __future__ import annotations
@@ -20,66 +13,40 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from fsa import flatten, narrative, soffice  # noqa: E402
-
-FONTS_DIR = Path(__file__).resolve().parent.parent / "assets" / "fonts"
+from fsa import report  # noqa: E402
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Inietta i testi ed esporta il Report in PDF.")
-    ap.add_argument("xlsx", type=Path, help="workbook editabile prodotto da build_report.py")
-    ap.add_argument("--analysis", type=Path, help="analysis.json con i 4 blocchi testuali")
-    ap.add_argument("--out", type=Path, help="path del PDF (default: accanto all'xlsx)")
-    ap.add_argument("--no-fonts", action="store_true", help="non installare i font bundlati")
+    ap = argparse.ArgumentParser(description="Genera il report PDF.")
+    ap.add_argument("metrics", type=Path, help="metrics.json prodotto da analyze.py")
+    ap.add_argument("--analysis", type=Path, required=True, help="analysis.json con i 4 blocchi testuali")
+    ap.add_argument("--out", type=Path, help="path del PDF (default: accanto a metrics.json)")
     args = ap.parse_args()
 
-    if not args.xlsx.exists():
-        print(f"File non trovato: {args.xlsx}", file=sys.stderr)
+    for path in (args.metrics, args.analysis):
+        if not path.exists():
+            print(f"File non trovato: {path}", file=sys.stderr)
+            return 1
+    m = json.loads(args.metrics.read_text(encoding="utf-8"))
+    try:
+        texts = json.loads(args.analysis.read_text(encoding="utf-8"))
+        if not isinstance(texts, dict):
+            raise ValueError("deve contenere un oggetto JSON con i 4 blocchi.")
+        unknown = set(texts) - set(report.TEXT_BLOCKS)
+        if unknown:
+            raise ValueError(f"blocchi sconosciuti {sorted(unknown)}. Ammessi: {list(report.TEXT_BLOCKS)}")
+    except ValueError as exc:  # JSONDecodeError e' un ValueError
+        print(f"[analysis.json NON valido] {exc}", file=sys.stderr)
         return 1
 
-    pdf_path = args.out or args.xlsx.with_suffix(".pdf")
-
-    if not args.no_fonts:
-        copied = soffice.ensure_fonts(FONTS_DIR)
-        if copied:
-            print(f"Font installati per il rendering: {copied}")
-
-    # --- 1. iniezione testi --------------------------------------------------------
-    if args.analysis:
-        from openpyxl import load_workbook
-
-        try:
-            texts = json.loads(args.analysis.read_text(encoding="utf-8"))
-            if not isinstance(texts, dict):
-                raise ValueError("deve contenere un oggetto JSON con i 4 blocchi.")
-            wb = load_workbook(filename=str(args.xlsx), data_only=False)
-            warnings = narrative.inject(wb, texts=texts)
-        except (ValueError, KeyError) as exc:  # JSONDecodeError e' un ValueError
-            print(f"[analysis.json NON valido] {exc.args[0]}", file=sys.stderr)
-            return 1
-        wb.save(str(args.xlsx))
-        for w in warnings:
-            print(f"[avviso capienza] {w}", file=sys.stderr)
-
-    # --- 2. ricalcolo --------------------------------------------------------------
-    try:
-        soffice.recalc(args.xlsx)
-        # --- 3. flatten (solo Report, valori statici) ------------------------------
-        with tempfile.TemporaryDirectory() as tmp:
-            render = flatten.flatten_report(args.xlsx, Path(tmp) / "render.xlsx")
-            # --- 4. PDF ------------------------------------------------------------
-            soffice.to_pdf(render, pdf_path)
-    except soffice.RenderError as exc:
-        print(f"[render] {exc}", file=sys.stderr)
-        return 3
-
-    print(f"PDF generato: {pdf_path}")
-    print(f"XLSX editabile (con testi): {args.xlsx}")
+    pdf = args.out or args.metrics.parent / report.default_filename(m["meta"])
+    for w in report.render(m, texts, pdf):
+        print(f"[avviso capienza] {w}", file=sys.stderr)
+    print(f"PDF generato: {pdf}")
     return 0
 
 

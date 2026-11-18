@@ -13,12 +13,12 @@ quelle elencate qui.
 
 ## Regole generali
 - Importi in **euro a 2 decimali**, segno positivo per costi e ricavi (i costi NON
-  vanno messi negativi: il modello li sottrae da solo).
+  vanno messi negativi: l'engine li sottrae da solo).
 - `y0` = ultimo esercizio, `y1` = precedente, `y2`, `y3`, ... gli esercizi ancora
   precedenti. Servono **almeno 2 esercizi**; inserire tutti quelli disponibili.
   Ogni voce deve avere **tutti** gli esercizi (`y0`..`yN-1`): se una voce ha `y3`,
-  devono averla tutte. Gli esercizi oltre `y1` alimentano lo **storico** (andamento
-  pluriennale): il Report mostra sempre e solo gli ultimi 2.
+  devono averla tutte. Ogni esercizio ha indici, punteggio e Altman Z''; le tabelle
+  del PDF mostrano i 5 piu' recenti, i grafici e `metrics.json` tutti.
 - Se una voce di dettaglio non esiste nel bilancio, impostarla a `0` (non lasciarla
   nulla), assicurandosi che i totali tornino.
 - Non inventare numeri: usare i totali di bilancio come ancore e mappare i dettagli
@@ -63,6 +63,7 @@ Coerenza CE attesa: `valore_della_produzione − costi_della_produzione = ebit`
 | Chiave canonica | Voce CEE | Note |
 |---|---|---|
 | `totale_patrimonio_netto` | A) | Patrimonio netto (incl. utile d'esercizio) |
+| `capitale_sociale` | A.I) | Capitale sociale (per l'Altman Z'': PN − capitale stima gli utili non distribuiti) |
 | `fondi_rischi_oneri` | B) | Fondi per rischi e oneri |
 | `tfr` | C) | Trattamento di fine rapporto |
 | `totale_debiti` | D) | Totale debiti (commerciali + finanziari + altri) |
@@ -76,7 +77,8 @@ Coerenza CE attesa: `valore_della_produzione − costi_della_produzione = ebit`
 | `crediti_verso_clienti` | C.II.1) | Per DSO; `"n.d."` se non separabile |
 
 ## Vincoli di coerenza (obbligatori per la quadratura)
-Devono valere al centesimo, altrimenti `build_report.py` esce con errore:
+I vincoli 1 e 5 devono valere al centesimo, altrimenti `analyze.py` esce con codice 2;
+2-4 producono un avviso:
 
 1. `immobilizzazioni + rimanenze + crediti + attivita_finanziarie + disponibilita_liquide + ratei_risconti_attivi = totale_attivo`
 2. `debiti_esigibili_breve + debiti_esigibili_oltre = totale_debiti`
@@ -85,7 +87,7 @@ Devono valere al centesimo, altrimenti `build_report.py` esce con errore:
 5. Passivo: `totale_debiti + fondi_rischi_oneri + tfr + totale_patrimonio_netto + ratei_risconti_passivi = totale_attivo`
 
 I debiti **commerciali/altri** non hanno una chiave propria: sono calcolati dal
-modello come `totale_debiti − totale_debiti_finanziari` (suddivisi per scadenza).
+engine come `totale_debiti − totale_debiti_finanziari` (suddivisi per scadenza).
 
 ## Casi particolari
 - **Bilancio abbreviato/micro**: spesso mancano dettagli (es. ripartizione

@@ -1,164 +1,156 @@
-"""Lettura dei valori derivati dal foglio di calcolo gia' ricalcolato.
+"""Riclassificazione, composizione e indici di ogni esercizio.
 
-Il modello e' l'unica fonte di verita' per indici, grade e fido: qui NON si
-ricalcola nulla, si legge ``data_only=True`` il workbook prodotto da
-:func:`fsa.soffice.recalc` e si costruisce un dizionario per la narrativa e per i
-rating del Report.
+Le formule sono quelle del vecchio modello Excel (foglio ``Report``, righe 61-142),
+portate 1:1 e verificate dai test contro i valori che il modello produceva. Un
+indice non calcolabile (denominatore zero, dato "n.d.", assenza di debiti
+finanziari per la PFN) vale ``None``.
+
+``compute`` restituisce il contenuto di ``metrics.json``: unica fonte dei numeri
+per la conversazione, i grafici e il PDF.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
-from openpyxl import load_workbook
+from . import mapping, scoring
+from .model import ND, CanonicalBalance
 
-from . import mapping
-
-# value (1..5) -> etichetta rating (coerente con Report!B14 e A11/A14/A17)
-RATING_BY_SCORE = {
-    1: "Eccellente",
-    2: "Positiva",
-    3: "Adeguata",
-    4: "Critica",
-    5: "Molto Critica",
-}
+Values = dict[str, Any]
 
 
-def rating_label(score: Any) -> str | None:
-    """Mappa un punteggio 1..5 sull'etichetta del Report. ``None`` se non calcolabile."""
-    try:
-        s = int(round(float(score)))
-    except (TypeError, ValueError):
+def _num(x: Any) -> float | None:
+    return None if x is None or x == ND else float(x)
+
+
+def div(a: Any, b: Any) -> float | None:
+    a, b = _num(a), _num(b)
+    if a is None or b is None or b == 0:
         return None
-    s = max(1, min(5, s))
-    return RATING_BY_SCORE[s]
+    return a / b
 
 
-def _v(ws, coord: str) -> Any:
-    return ws[coord].value
+def var(new: Any, old: Any) -> float | None:
+    """Variazione rispetto all'anno prima, sul valore assoluto del precedente.
 
-
-def _pair(ws, b_coord: str, c_coord: str) -> dict[str, Any]:
-    return {"y0": _v(ws, b_coord), "y1": _v(ws, c_coord)}
-
-
-def read_back(recalced_xlsx: str | Path) -> dict[str, Any]:
-    """Estrae il set di metriche dal workbook ricalcolato."""
-    wb = load_workbook(filename=str(recalced_xlsx), data_only=True)
-    rep = wb[mapping.REPORT_SHEET]
-    inp = wb[mapping.INPUT_SHEET]
-
-    economico = {
-        "valore_produzione": _pair(rep, "B98", "C98"),
-        "valore_produzione_var": _v(rep, "D98"),
-        "ricavi_di_vendita": _pair(rep, "B99", "C99"),
-        "ebit": _pair(rep, "B115", "C115"),
-        "ebit_var": _v(rep, "D115"),
-        "ebit_pct": _pair(rep, "B116", "C116"),
-        "ebitda": _pair(rep, "B136", "C136"),
-        "utile": _pair(rep, "B119", "C119"),
-        "utile_var": _v(rep, "D119"),
-        "ros": _pair(rep, "B133", "C133"),
-        "roe": _pair(rep, "B134", "C134"),
-        "roi": _pair(rep, "B135", "C135"),
-        "costi_produzione": _pair(rep, "B100", "C100"),
-    }
-    finanziario = {
-        "test_acido": _pair(rep, "B126", "C126"),
-        "current_ratio": _pair(rep, "B127", "C127"),
-        "rapporto_indebitamento": _pair(rep, "B129", "C129"),
-        "pfn": _pair(rep, "B130", "C130"),
-        "pfn_ebitda": _pair(rep, "B131", "C131"),
-        "dso": _pair(rep, "B139", "C139"),
-        "dpo": _pair(rep, "B140", "C140"),
-        "dio": _pair(rep, "B141", "C141"),
-        "ccc": _pair(rep, "B142", "C142"),
-    }
-    patrimoniale = {
-        "totale_attivo": _pair(rep, "B73", "C73"),
-        "patrimonio_netto": _pair(rep, "B76", "C76"),
-        "patrimonio_netto_pct": _pair(rep, "B77", "C77"),
-        "debiti_finanziari": _pair(rep, "B86", "C86"),
-        "debiti_finanziari_pct": _pair(rep, "B89", "C89"),
-        "disponibilita_liquide": _pair(rep, "B69", "C69"),
-        "disponibilita_liquide_pct": _pair(rep, "B70", "C70"),
-        "immobilizzazioni": _pair(rep, "B61", "C61"),
-        "dipendenti": _pair(rep, "B120", "C120"),
-    }
-
-    sub_redd = _v(inp, "C127")
-    sub_fin = _v(inp, "C135")
-    sub_patr = _v(inp, "C140")
-    grade_fido = {
-        "grade_pesato": _v(inp, "E75"),
-        "grade_finale": _v(inp, "C83"),
-        "fido_massimo": _v(inp, "D83"),
-        "fido_label": _v(inp, "D85"),
-        "dimensione_impresa": _v(inp, "I92"),
-        "sub_grade_reddituale": sub_redd,
-        "sub_grade_finanziaria": sub_fin,
-        "sub_grade_patrimoniale": sub_patr,
-    }
-
-    ratings = {
-        # B11 (Reddituale), B14 (Finanziaria), B17 (Patrimoniale) sono valori da scrivere
-        "reddituale": rating_label(sub_redd),
-        "finanziaria": rating_label(sub_fin),
-        "patrimoniale": rating_label(sub_patr),
-    }
-
-    meta = {
-        "nome_azienda": _v(rep, "B1"),
-        "anno": _v(inp, "B2"),
-        "partita_iva": _v(rep, "B4"),
-        "ateco": _v(rep, "B5"),
-        "forma_giuridica": _v(rep, "B6"),
-        "sede": _v(rep, "B7"),
-    }
-
-    return {
-        "meta": meta,
-        "economico": economico,
-        "finanziario_patrimoniale": {**finanziario, **patrimoniale},
-        "grade_fido": grade_fido,
-        "ratings": ratings,
-    }
-
-
-def _at(section: dict[str, Any], year: str) -> dict[str, Any]:
-    """Valori di un solo anno; le variazioni (scalari) valgono solo per y0 vs y1."""
-    return {
-        k: v[year] if isinstance(v, dict) else v
-        for k, v in section.items()
-        if isinstance(v, dict) or year == "y0"
-    }
-
-
-def storico(windows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Serie annuale dal piu' recente, da ``read_back`` delle coppie di esercizi.
-
-    ``windows[k]`` e' la lettura della coppia (anno-k, anno-k-1): ogni anno prende i
-    valori y0 della propria coppia (con variazioni, grade e rating). L'anno piu'
-    vecchio compare solo come y1 dell'ultima coppia: ha gli indici ma non variazioni,
-    grade ne' rating, perche' manca l'esercizio precedente con cui confrontarlo.
+    Il vecchio modello divideva per il valore con segno: da una perdita a un utile
+    la "crescita" risultava negativa.
     """
-    out = [
-        {
-            "anno": int(w["meta"]["anno"]),
-            "economico": _at(w["economico"], "y0"),
-            "finanziario_patrimoniale": _at(w["finanziario_patrimoniale"], "y0"),
-            "grade_fido": w["grade_fido"],
-            "ratings": w["ratings"],
-        }
-        for w in windows
-    ]
-    last = windows[-1]
-    out.append(
-        {
-            "anno": int(last["meta"]["anno"]) - 1,
-            "economico": _at(last["economico"], "y1"),
-            "finanziario_patrimoniale": _at(last["finanziario_patrimoniale"], "y1"),
-        }
+    new, old = _num(new), _num(old)
+    if new is None or old is None or old == 0:
+        return None
+    return (new - old) / abs(old)
+
+
+def values(balance: CanonicalBalance, year: str) -> Values:
+    """Voci di un esercizio piu' gli aggregati usati dal Report."""
+    v: Values = {k: balance.ce(k, year) for k in mapping.CE_KEYS}
+    v.update({k: balance.sp(k, year) for k in mapping.SP_KEYS})
+    v["ebitda"] = v["ebit"] + v["ammortamenti"]
+    v["debiti_non_finanziari"] = v["totale_debiti"] - v["totale_debiti_finanziari"]
+    v["debiti_non_finanziari_breve"] = v["debiti_esigibili_breve"] - v["debiti_finanziari_breve"]
+    v["debiti_non_finanziari_oltre"] = v["debiti_esigibili_oltre"] - v["debiti_finanziari_oltre"]
+    v["attivo_corrente"] = (
+        v["rimanenze"] + v["crediti"] + v["disponibilita_liquide"] + v["ratei_risconti_attivi"]
     )
+    return v
+
+
+def _days(amount: Any, base: Any) -> float | None:
+    ratio = div(amount, base)
+    return None if ratio is None else ratio * 365
+
+
+def indices(v: Values) -> dict[str, float | None]:
+    fin = v["totale_debiti_finanziari"]
+    pfn = None if fin == 0 else v["disponibilita_liquide"] + v["attivita_finanziarie"] - fin
+    out: dict[str, float | None] = {
+        # Liquidita'
+        "test_acido": div(
+            v["crediti"] + v["disponibilita_liquide"] + v["ratei_risconti_attivi"],
+            v["debiti_esigibili_breve"],
+        ),
+        "current_ratio": div(v["attivo_corrente"], v["debiti_esigibili_breve"]),
+        # Indebitamento e sostenibilita' del debito
+        "rapporto_indebitamento": div(
+            v["debiti_non_finanziari"] if fin == 0 else fin, v["totale_patrimonio_netto"]
+        ),
+        "pfn": pfn,
+        "pfn_ebitda": div(pfn, v["ebitda"]),
+        "ims": div(v["totale_patrimonio_netto"], v["immobilizzazioni"]),
+        "interest_coverage": div(v["ebitda"], v["oneri_finanziari"]),
+        # Redditivita'
+        "ros": div(v["ebit"], v["ricavi_di_vendita"]),
+        "roe": div(v["utile_perdita_esercizio"], v["totale_patrimonio_netto"]),
+        "roi": div(v["ebit"], v["totale_attivo"]),
+        "ebitda_pct": div(v["ebitda"], v["valore_della_produzione"]),
+        "ebit_pct": div(v["ebit"], v["valore_della_produzione"]),
+        "risultato_pct": div(v["utile_perdita_esercizio"], v["valore_della_produzione"]),
+        # Efficienza (incassi sul valore della produzione, pagamenti e magazzino sui costi)
+        "asset_turnover": div(v["ricavi_di_vendita"], v["totale_attivo"]),
+        "dso": _days(v["crediti_verso_clienti"], v["valore_della_produzione"]),
+        "dpo": _days(v["debiti_verso_fornitori"], v["costi_della_produzione"]),
+        "dio": _days(v["rimanenze"], v["costi_della_produzione"]),
+    }
+    dso, dio, dpo = out["dso"], out["dio"], out["dpo"]
+    out["ccc"] = None if None in (dso, dio, dpo) else dso + dio - dpo  # type: ignore[operator]
     return out
+
+
+_ON_ASSETS = (
+    "immobilizzazioni",
+    "rimanenze",
+    "crediti",
+    "attivita_finanziarie",
+    "disponibilita_liquide",
+    "ratei_risconti_attivi",
+    "totale_patrimonio_netto",
+    "fondi_rischi_oneri",
+    "tfr",
+    "debiti_non_finanziari",
+    "totale_debiti_finanziari",
+    "ratei_risconti_passivi",
+)
+_ON_COSTS = (
+    "costi_per_materie",
+    "costi_per_servizi",
+    "costi_godimento_beni_terzi",
+    "costi_personale",
+    "ammortamenti",
+    "accantonamenti_per_rischi",
+    "oneri_diversi_di_gestione",
+)
+
+
+def composition(v: Values) -> dict[str, float | None]:
+    """Peso delle voci: SP sul totale attivo, costi sui costi della produzione."""
+    out = {f"{k}_su_attivo": div(v[k], v["totale_attivo"]) for k in _ON_ASSETS}
+    out.update({f"{k}_su_costi": div(v[k], v["costi_della_produzione"]) for k in _ON_COSTS})
+    return out
+
+
+def compute(balance: CanonicalBalance) -> dict[str, Any]:
+    """Tutte le metriche, un elemento per esercizio dal piu' recente."""
+    anno = int(balance.meta["anno"])
+    vals = [values(balance, y) for y in balance.years]
+    idx = [indices(v) for v in vals]
+    esercizi = []
+    for k, (v, ind) in enumerate(zip(vals, idx)):
+        prev = (vals[k + 1], idx[k + 1]) if k + 1 < len(vals) else None
+        esercizi.append(
+            {
+                "anno": anno - k,
+                "valori": v,
+                "composizione": composition(v),
+                "variazioni": {key: var(v[key], prev[0][key]) for key in v} if prev else None,
+                "indici": ind,
+                "punteggio": scoring.score(v, ind, prev),
+                "altman": scoring.altman(v),
+            }
+        )
+    return {
+        "meta": {k: balance.meta.get(k) for k in mapping.META_KEYS},
+        "anni": [e["anno"] for e in esercizi],
+        "dimensione_impresa": scoring.firm_size(vals[0]),
+        "esercizi": esercizi,
+    }

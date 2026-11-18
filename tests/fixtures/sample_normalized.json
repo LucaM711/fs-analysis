@@ -2,7 +2,6 @@
   "meta": {
     "nome_azienda": "Acme S.r.l.",
     "anno": 2024,
-    "tipologia": "Fornitore",
     "ateco": "62.01",
     "partita_iva": "12345678901",
     "forma_giuridica": "S.r.l.",
@@ -34,6 +33,7 @@
     "ratei_risconti_attivi": {"y0": 10000, "y1": 9000},
     "totale_attivo": {"y0": 1160000, "y1": 1079000},
     "totale_patrimonio_netto": {"y0": 400000, "y1": 358000},
+    "capitale_sociale": {"y0": 100000, "y1": 100000},
     "fondi_rischi_oneri": {"y0": 30000, "y1": 28000},
     "tfr": {"y0": 70000, "y1": 65000},
     "totale_debiti": {"y0": 640000, "y1": 610000},

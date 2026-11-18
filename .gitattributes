@@ -3,7 +3,7 @@
 *.[bB][aA][tT] text eol=crlf
 *.[pP][sS]1 text eol=crlf
 
-# Asset binari: mai normalizzare (corromperebbe template e font)
+# Asset binari: mai normalizzare (corromperebbe i file)
 *.xlsx binary
 *.xls binary
 *.xlsm binary

@@ -1,50 +1,76 @@
-# Indici, Grade e Fido — definizioni e lettura per la narrativa
+# Indici, punteggio e Altman Z'' — definizioni e lettura
 
-I valori numerici di indici, grade e fido sono calcolati dal **modello** (foglio
-`Input`/`Report`) e letti da `metrics.json`. NON ricalcolarli a mano: questa pagina
-serve solo a interpretarli correttamente nel testo.
+Tutti i valori sono calcolati dall'engine (`fsa/metrics.py`, `fsa/scoring.py`) e si
+leggono da `metrics.json`, sotto `esercizi[i]` (`i = 0` e' l'ultimo esercizio). **Non
+ricalcolarli a mano**: questa pagina serve a interpretarli. Un valore `null` vuol dire
+"non calcolabile" (denominatore zero, dato `n.d.`, nessun debito finanziario per la PFN).
 
 ## Indice
-- [Indici (foglio Report)](#indici-foglio-report)
-- [Grade complessivo e dimensione impresa](#grade-complessivo-e-dimensione-impresa)
-- [Sotto-grade e rating (Reddituale/Finanziaria/Patrimoniale)](#sotto-grade-e-rating)
-- [Fido massimo](#fido-massimo)
-- [Bande interpretative (PLACEHOLDER MVP)](#bande-interpretative-placeholder-mvp)
+- [Dove sono i numeri](#dove-sono-i-numeri)
+- [Indici](#indici)
+- [Punteggio complessivo](#punteggio-complessivo)
+- [Rating per area](#rating-per-area)
+- [Altman Z''](#altman-z)
+- [Dimensione d'impresa](#dimensione-dimpresa)
+- [Bande di lettura](#bande-di-lettura)
 
-## Indici (foglio Report)
-- **Liquidita'**: Test Acido `(Crediti+Disp.Liq.+Ratei att.)/Debiti a breve` ---> Prova più severa rispetto al Current Ratio. Si ottiene sottraendo le rimanenze dal numeratore del current
-  ratio, scelta derivante dalla considerazione delle ovvie problematiche inerenti alla loro liquidabilità senza perdite del loro valore. Con Test Acido > 1 le attività correnti al netto delle scorte (denaro in cassa più gli incassi attesi dai crediti) sono sufficienti a coprire i debiti — commerciali e/o finanziari — scadenti nel breve periodo, senza dover smobilizzare il magazzino. ;
-  Current Ratio `(Rimanenze+...)/Debiti a breve` ---> Rappresenta la nozione del capitale circolante netto, 
-  non più considerando qui le attività correnti come misura di un fabbisogno di finanziamento, ma evidenziandone la complementare funzione di insieme di risorse più, o meno, pronte a far fronte ai debiti correntemente esigibili. Per ottenere un buon livello di solvibilità le attività correnti `(Rimanenze+Crediti+Disp.Liq.+Ratei att.)` devono superare le passività correnti `(Debiti a breve)`, e quindi Current Ratio > 1: l'impresa fa fronte ai debiti — commerciali e/o finanziari — scadenti nel breve periodo utilizzando l'intero insieme delle attività correnti, incluso il valore contabile delle scorte.
-  Nel caso in cui test Acido < 1 e Current Ratio > 1 = Situazione pericolosa, da cui al netto delle scorte, le attività correnti non sono sufficienti a coprire quanto esigibile dalle passività correnti.
-- **Indebitamento/sostenibilita'**: Rapporto Indebitamento `Debiti Fin./PN`
-  (o `Debiti/PN` se Deb.Fin.=0) ---> nel caso in cui `Debiti Fin.`=0, si parla di Indice di leva finanziaria e misura quanto pesa l'indebitamento a fronte del capitale di rischio. Più risulta alto il valore dell'indice di leva finanziaria, maggiore è il livello di indebitamento dell'azienda. Il numeratore può comprendere sia tutti i debiti, sia soltanto quelli finanziari, caso in cui si parla di Leva finanziaria netta. ; PFN `Disp.Liq.+Att.Fin.−Debiti Fin.` (positiva = posizione di cassa netta;
-  negativa = indebitamento finanziario netto) ---> La posizione finanziaria netta (PFN) è un indice di bilancio, cioè un indicatore che serve ad analizzare il bilancio d’esercizio di un’azienda. È data dalla differenza tra la somma di liquidità e crediti finanziari da una parte e i debiti finanziari verso banche o altri finanziatori dall’altra. La liquidità comprende ad esempio depositi bancari e denaro in cassa. La PFN si può calcolare a breve termine (considerando i crediti e i debiti finanziari a breve termine) o a medio-lungo termine (considerando invece i crediti e i debiti finanziari a medio-lungo termine). Se è positiva l’impresa ha disponibilità finanziaria, se è negativa è in una situazione di indebitamento. Esprime quindi la capacità/incapacità dell'azienda di generare la liquidità sufficiente a coprire le proprie esigenze di gestione e di far fronte ai debiti (solvibilità); PFN/EBITDA  esprime in “quanti anni” un’azienda è in grado di ripagare i debiti finanziari contratti ove utilizzasse la totalità dei suoi flussi operativi “potenziali” (EBITDA) per tale finalità; esso indica anche in quanto tempo la società potrà saldare il suo debito. Nota sul segno: in questo modello la PFN positiva = cassa netta, quindi la lettura "anni per ripagare" vale quando la PFN e' negativa (indebitamento netto); una PFN/EBITDA positiva segnala invece posizione di cassa netta.
-- **Redditivita'**: ROS `EBIT/Ricavi` Rappresenta il cardine della misura dell'efficienza della gestione aziendale, nonché condizione per generare redditività, a prescindere dalla copertura degli eventuali risultati negativi emergenti dalla gestione finanziaria, straordinaria e fiscale. Il Return on Sales (ROS) misura l'efficienza operativa dell'impresa e consente di effettuare comparazioni nel tempo per una stessa impresa e fra imprese operanti nello stesso settore. Un indice elevato è sintomo di buona salute operativa e commerciale dell'impresa. ;
-  ROE `Utile/PN` ---> rendimento contabile del capitale di rischio conferito dai soci. Va confrontato col costo-opportunita' del capitale; attenzione: un ROE elevato puo' derivare da un PN molto basso (alta leva) piu' che da redditivita' reale, quindi va letto insieme a ROI e rapporto di indebitamento. ;
-  ROI `EBIT/Totale Attivo` ---> redditivita' del capitale investito nella gestione operativa, a prescindere dalla struttura finanziaria. Confronto chiave col costo medio del debito: se ROI > costo del debito la leva amplifica il ROE (effetto leva positivo), se ROI < costo del debito lo erode. ;
-  EBITDA `EBIT+Ammortamenti` ---> margine operativo lordo (qui EBIT piu' i soli ammortamenti): proxy della cassa generata dalla gestione caratteristica prima di ammortamenti, oneri finanziari e imposte. E' la base di PFN/EBITDA e della valutazione di sostenibilita' del debito. ;
-  EBIT% `EBIT/Valore Produzione` ---> incidenza del reddito operativo sul valore della produzione; marginalita' operativa al lordo della gestione finanziaria, straordinaria e fiscale (complementare al ROS, che rapporta l'EBIT ai ricavi di vendita).
-- **Efficienza** (i tempi del ciclo usano il valore della produzione per gli incassi, i costi della produzione per pagamenti e magazzino):
-  Asset Turnover `Ricavi/Totale Attivo` ---> rotazione del capitale investito: euro di ricavi per ogni euro di attivo. Vale la scomposizione DuPont: ROI = ROS x Asset Turnover. ;
-  DSO `Crediti v/clienti / Valore Produzione x 365` (giorni) ---> giorni medi di incasso dei crediti commerciali. Piu' basso = incassi piu' rapidi. ;
-  DPO `Debiti v/fornitori / Costi Produzione x 365` (giorni) ---> giorni medi di pagamento ai fornitori. Piu' alto = maggiore dilazione ottenuta, ma valori molto elevati possono segnalare tensioni di liquidita'. ;
-  DIO `Rimanenze / Costi Produzione x 365` (giorni) ---> giorni medi di giacenza del magazzino. Piu' basso = scorte che ruotano piu' velocemente. ;
-  CCC `DSO + DIO - DPO` (giorni) ---> ciclo monetario: giorni tra l'uscita di cassa per gli acquisti e l'incasso dalle vendite. Piu' basso (o negativo) = minor fabbisogno di circolante; un CCC negativo indica che i fornitori finanziano il ciclo operativo.
+## Dove sono i numeri
+| Campo di `esercizi[i]` | Contenuto |
+|---|---|
+| `anno` | esercizio |
+| `valori` | voci di `normalized.json` + `ebitda`, `debiti_non_finanziari` (+ `_breve`/`_oltre`), `attivo_corrente` |
+| `composizione` | `<voce>_su_attivo` (SP sul totale attivo), `<costo>_su_costi` (sui costi della produzione) |
+| `variazioni` | variazione % di ogni voce di `valori` sull'anno prima (`null` per l'esercizio piu' vecchio) |
+| `indici` | gli indici qui sotto |
+| `punteggio` | `complessivo` (1-10), `grade`, `indici.<nome>.grade/peso`, `aree` |
+| `altman` | `x1`..`x4`, `z`, `zona` |
 
-Per ciascun indice il modello assegna un **grade 1..10** (1 = migliore) tramite
-soglie e pesi predefiniti; la loro media pesata e' il grade complessivo.
+Le variazioni dividono per il **valore assoluto** dell'anno prima: da una perdita a un
+utile la variazione e' positiva.
 
-## Grade complessivo e dimensione impresa
-- `grade_pesato` = media pesata dei grade 1..10 dei singoli indici (`Input!E75`).
-- `dimensione_impresa` ∈ {Microimpresa, Piccola impresa, Media impresa, Grande
-  impresa}, classificata su Totale Attivo, Ricavi e numero dipendenti.
-- `grade_finale` (`Input!C83`) = arrotondamento del grade pesato con correzione per
-  dimensione (le imprese piu' piccole ricevono un piccolo aggravio prudenziale).
-  **1 = profilo migliore, 10 = peggiore.**
+## Indici
+| Chiave | Formula | Lettura |
+|---|---|---|
+| `test_acido` | (crediti + liquidita' + ratei att.) / debiti a breve | > 1: le attivita' correnti senza magazzino coprono i debiti a breve. Piu' severo del current ratio |
+| `current_ratio` | attivo corrente / debiti a breve | > 1: buona solvibilita' usando anche le scorte. Test acido < 1 con current ratio > 1 = dipendenza dal magazzino |
+| `rapporto_indebitamento` | debiti finanziari / PN (debiti non finanziari / PN se i finanziari sono 0) | peso del debito sul capitale di rischio: piu' alto = piu' leva |
+| `pfn` | liquidita' + attivita' fin. − debiti finanziari | **positiva = cassa netta**, negativa = indebitamento netto |
+| `pfn_ebitda` | PFN / EBITDA | con PFN negativa: quanti anni di EBITDA servono a ripagare il debito netto. Con PFN positiva segnala cassa netta |
+| `ims` | PN / immobilizzazioni | margine di struttura: ≥ 1 = immobilizzazioni coperte dal capitale proprio |
+| `interest_coverage` | EBITDA / oneri finanziari | quante volte il margine copre gli interessi |
+| `ros` | EBIT / ricavi | efficienza operativa, confrontabile nel tempo e nel settore |
+| `roe` | utile / PN | rendimento del capitale di rischio. Un ROE alto con PN basso puo' venire dalla leva: leggerlo con ROI e indebitamento |
+| `roi` | EBIT / totale attivo | redditivita' del capitale investito. ROI > costo del debito = leva favorevole |
+| `ebitda_pct`, `ebit_pct`, `risultato_pct` | EBITDA, EBIT, utile / valore della produzione | marginalita' lorda, operativa e netta |
+| `asset_turnover` | ricavi / totale attivo | euro di ricavi per euro investito (ROI = ROS × asset turnover) |
+| `dso` | crediti v/clienti / valore produzione × 365 | giorni medi di incasso: piu' basso e' meglio |
+| `dpo` | debiti v/fornitori / costi produzione × 365 | giorni medi di pagamento: piu' alto = piu' dilazione, ma valori estremi segnalano tensione |
+| `dio` | rimanenze / costi produzione × 365 | giorni di magazzino |
+| `ccc` | DSO + DIO − DPO | ciclo monetario: piu' basso (o negativo) = meno capitale circolante da finanziare |
 
-## Sotto-grade e rating
-Tre aree con punteggio **1..5** (1 = migliore) e relativa etichetta:
+EBITDA = EBIT + ammortamenti (`valori.ebitda`).
+
+## Punteggio complessivo
+Ogni indice riceve un **grade da 1 (migliore) a 10** tramite soglie fisse
+(`INDEX_GRADES` in `fsa/scoring.py`). Il `complessivo` e' la **media pesata** dei grade
+calcolabili; i pesi degli indici non calcolabili vengono ridistribuiti. Il `grade` e'
+il complessivo arrotondato.
+
+| Area | Indici (peso) |
+|---|---|
+| Liquidita' | test acido (10%), current ratio (10%) |
+| Indebitamento | rapporto di indebitamento (10%), PFN/EBITDA (15%), IMS (5%), copertura interessi (10%) |
+| Redditivita' | ROS (10%), ROE (5%), ROI (5%), EBITDA% (10%), EBIT% (5%), risultato% (2,5%) |
+| Efficienza | asset turnover (2,5%) |
+
+Casi speciali: con PFN in cassa netta ed EBITDA positivo il grade PFN/EBITDA e' 3; con
+debito netto ed EBITDA negativo e' 8; senza debiti finanziari e' 5, oppure e' escluso
+se non ci sono nemmeno oneri finanziari. Senza oneri finanziari la copertura interessi
+ha grade 1.
+
+## Rating per area
+`punteggio.aree.<area>` ha `punteggio` da **1 (migliore) a 5**, `rating` e il dettaglio
+`componenti`. Richiede l'esercizio precedente, quindi e' `null` per il piu' vecchio.
 
 | Punteggio | Rating |
 |---|---|
@@ -54,29 +80,45 @@ Tre aree con punteggio **1..5** (1 = migliore) e relativa etichetta:
 | 4 | Critica |
 | 5 | Molto Critica |
 
-- **Reddituale** (`sub_grade_reddituale`) → cella Report `B11`.
-- **Finanziaria** (`sub_grade_finanziaria`) → cella `B14`.
-- **Patrimoniale** (`sub_grade_patrimoniale`) → cella `B17`.
+- **Reddituale**: crescita del valore della produzione, dell'EBIT e dell'utile,
+  variazione dell'incidenza di EBIT e utile, ROS.
+- **Finanziaria**: peso e crescita della liquidita', liquidita' oltre il debito
+  finanziario a breve e totale, crescita dell'EBITDA.
+- **Patrimoniale**: peso del patrimonio netto sull'attivo, rapporto di indebitamento.
 
-`build_report.py` scrive automaticamente `B11`/`B14`/`B17` dai sotto-grade calcolati: nel
-testo usare le etichette coerenti (campo `ratings` di `metrics.json`).
+## Altman Z''
+Modello di Altman (1995) per le imprese non quotate:
+`Z'' = 6,56·X1 + 3,26·X2 + 6,72·X3 + 1,05·X4`.
 
-## Fido massimo
-`fido_massimo` (`Input!D83`) = importo massimo di affidamento proposto, funzione del
-`grade_finale` e della `dimensione_impresa`; `fido_label` e' la fascia formattata
-(es. `"0 € - 70.000 €"`). Riportare nel testo il valore del modello, senza alterarlo.
+| Componente | Formula |
+|---|---|
+| `x1` | (attivo corrente − debiti a breve) / totale attivo |
+| `x2` | (PN − capitale sociale) / totale attivo, una stima degli utili non distribuiti che include anche le altre riserve |
+| `x3` | EBIT / totale attivo |
+| `x4` | PN / (totale attivo − PN) |
 
-## Bande interpretative (PLACEHOLDER MVP)
-> Logica provvisoria per dare un tono coerente alla prosa. Da rivedere quando
-> saranno definite le logiche di rating definitive. NON cambia i numeri del modello.
+Zone (`zona`): **sicurezza** oltre 2,60; **grigia** da 1,10 a 2,60 compresi; **rischio** sotto 1,10.
+La zona si decide sullo Z'' arrotondato a 2 decimali, cioe' sul valore mostrato.
+E' un indicatore statistico di rischio, non una previsione: citarlo come tale.
 
-Grade finale (1..10):
-- **1–3**: profilo solido / rischio basso — tono positivo, evidenziare i punti di forza.
-- **4–6**: profilo adeguato / rischio medio — tono equilibrato, segnalare aree di attenzione.
-- **7–8**: profilo debole / rischio medio-alto — tono prudente, indicare le criticita'.
-- **9–10**: profilo critico / rischio alto — tono cauto, raccomandazioni di monitoraggio.
+## Dimensione d'impresa
+`dimensione_impresa` (ultimo esercizio) segue la Raccomandazione UE 2003/361:
 
-Linee guida per la narrativa:
-- Ancorare ogni affermazione a un numero di `metrics.json` (indice, variazione %, grade).
-- Coerenza fra rating mostrato (B11/B14/B17) e testo dell'area corrispondente.
-- Niente raccomandazioni di investimento; analisi descrittiva e di merito creditizio.
+| Dimensione | Dipendenti | e fatturato oppure attivo |
+|---|---|---|
+| Microimpresa | < 10 | ≤ 2 mln oppure ≤ 2 mln |
+| Piccola impresa | < 50 | ≤ 10 mln oppure ≤ 10 mln |
+| Media impresa | < 250 | ≤ 50 mln oppure ≤ 43 mln |
+| Grande impresa | oltre | |
+
+E' solo descrittiva: non modifica il punteggio.
+
+## Bande di lettura
+Per il tono del testo, in base al `grade` (1..10):
+- **1–3**: profilo solido; evidenziare i punti di forza.
+- **4–6**: profilo adeguato; equilibrio fra punti di forza e di attenzione.
+- **7–8**: profilo debole; indicare le criticita'.
+- **9–10**: profilo critico; tono cauto, indicare cosa monitorare.
+
+Il punteggio, i rating e lo Z'' sono strumenti di analisi: niente raccomandazioni di
+investimento o di affidamento.
