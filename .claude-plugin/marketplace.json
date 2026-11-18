@@ -11,7 +11,7 @@
     {
       "name": "fs-analysis",
       "source": "./plugins/fs-analysis",
-      "description": "Riclassifica un bilancio (Stato Patrimoniale + Conto Economico) da PDF o XLSX secondo i principi contabili italiani, verifica la quadratura al centesimo, calcola indici/grade/fido e produce un report a layout fisso in XLSX ed esportato in PDF.",
+      "description": "Analizza un bilancio italiano (Stato Patrimoniale + Conto Economico, uno o piu' esercizi) da PDF o XLSX: riclassificazione secondo i principi contabili italiani, quadratura al centesimo, indici, punteggio sintetico e Altman Z'', insight e grafici in chat e report PDF a layout fisso.",
       "version": "1.1.3"
     }
   ]

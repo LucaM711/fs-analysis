@@ -4,9 +4,8 @@
 l'engine. Struttura attesa::
 
     {
-      "meta": {"nome_azienda": str, "anno": int, "tipologia": str|null,
-               "ateco": str|null, "partita_iva": str|null,
-               "forma_giuridica": str|null, "sede": str|null},
+      "meta": {"nome_azienda": str, "anno": int, "ateco": str|null,
+               "partita_iva": str|null, "forma_giuridica": str|null, "sede": str|null},
       "conto_economico":   {"<chiave>": {"y0": num, "y1": num, ..., "yN-1": num}, ...},
       "stato_patrimoniale":{"<chiave>": {"y0": num, "y1": num, ..., "yN-1": num}, ...}
     }
@@ -146,23 +145,6 @@ class CanonicalBalance:
     def sp(self, key: str, year: str) -> float:
         return self.stato_patrimoniale[key].get(year, 0.0)
 
-    def window(self, k: int) -> "CanonicalBalance":
-        """La coppia (y{k}, y{k+1}) come (y0, y1), con ``anno`` = ultimo anno - k.
-
-        Il modello confronta sempre 2 esercizi: lo storico si ottiene ricalcolandolo
-        una volta per ogni coppia di esercizi consecutivi.
-        """
-        new, old = self.years[k], self.years[k + 1]
-
-        def shift(section: dict[str, dict[str, float]]) -> dict[str, dict[str, float]]:
-            return {key: {"y0": v[new], "y1": v[old]} for key, v in section.items()}
-
-        return CanonicalBalance(
-            meta={**self.meta, "anno": int(self.meta["anno"]) - k},
-            conto_economico=shift(self.conto_economico),
-            stato_patrimoniale=shift(self.stato_patrimoniale),
-        )
-
 
 def skeleton(anno: int | None = None, esercizi: int = MIN_YEARS) -> dict[str, Any]:
     """Schema vuoto di ``normalized.json`` (``esercizi`` = y0..y{esercizi-1})."""
@@ -171,15 +153,7 @@ def skeleton(anno: int | None = None, esercizi: int = MIN_YEARS) -> dict[str, An
         return {k: {f"y{i}": None for i in range(esercizi)} for k in keys}
 
     return {
-        "meta": {
-            "nome_azienda": None,
-            "anno": anno,
-            "tipologia": None,
-            "ateco": None,
-            "partita_iva": None,
-            "forma_giuridica": None,
-            "sede": None,
-        },
+        "meta": {k: (anno if k == "anno" else None) for k in mapping.META_KEYS},
         "conto_economico": empty_section(mapping.CE_KEYS),
         "stato_patrimoniale": empty_section(mapping.SP_KEYS),
     }

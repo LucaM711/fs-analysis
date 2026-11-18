@@ -82,12 +82,3 @@ def test_non_finite_and_bool_rejected(sample_data, bad):
     data["stato_patrimoniale"]["tfr"]["y0"] = bad
     with pytest.raises(ValidationError):
         CanonicalBalance.from_dict(data)
-
-
-def test_window_shifts_pair(sample_data):
-    bal = CanonicalBalance.from_dict(with_years(sample_data, 4))
-    w = bal.window(2)
-    assert w.years == ("y0", "y1")
-    assert w.meta["anno"] == bal.meta["anno"] - 2
-    assert w.ce("ebit", "y0") == bal.ce("ebit", "y2")
-    assert w.sp("totale_attivo", "y1") == bal.sp("totale_attivo", "y3")

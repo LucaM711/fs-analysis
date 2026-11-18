@@ -1,47 +1,41 @@
-# Formato dell'output — celle del Report (NON modificare il layout)
+# Il report PDF
 
-Il foglio `Report` ha un **layout fisso** (area di stampa `A1:D185`, portrait, scala
-80, font Syne). L'output e' SEMPRE lo stesso formato. L'engine scrive solo le celle
-qui sotto; ogni altra cella e' calcolata da formule e non va toccata.
+`render_pdf.py` produce **un PDF A4 di 4 pagine a layout fisso** da `metrics.json` e
+`analysis.json`. Il layout non cambia: cambiano solo numeri e testi.
 
-## Celle scritte dall'engine
+| Pagina | Contenuto |
+|---|---|
+| 1 | Intestazione (ragione sociale, periodo), profilo (P.IVA, ATECO, forma giuridica, sede, dimensione UE, dipendenti), **valutazione sintetica** (punteggio 1-10, rating per area, Altman Z'' con zona), 8 KPI con variazione %, blocchi `economico` e `finanziario_patrimoniale` |
+| 2 | Blocchi `sintesi` e `valutazione`; 4 grafici: andamento economico, struttura patrimoniale, redditivita', solidita' (Z'') |
+| 3 | Stato patrimoniale riclassificato e conto economico, con la variazione % dell'ultimo anno |
+| 4 | Indici per anno; punteggio, rating e componenti dello Z'' per anno |
 
-### Blocchi testuali (analysis.json → celle merge)
-| Chiave `analysis.json` | Cella (merge) | Sezione |
+Le tabelle mostrano i **5 esercizi piu' recenti**; i grafici li mostrano tutti.
+
+## Blocchi testuali (`analysis.json`)
+| Chiave | Pagina | Sezione |
 |---|---|---|
-| `economico` | `A34:B43` | Ambito Economico |
-| `finanziario_patrimoniale` | `C34:D43` | Ambito Finanziario e Patrimoniale |
-| `sintesi` | `A46:B55` | Sintesi |
-| `grade_fido` | `C46:D55` | Grade e Fido |
+| `economico` | 1, a sinistra | Ambito economico |
+| `finanziario_patrimoniale` | 1, a destra | Ambito finanziario e patrimoniale |
+| `sintesi` | 2, a sinistra | Sintesi |
+| `valutazione` | 2, a destra | Valutazione |
 
-### Rating (scritti automaticamente da build_report.py)
-| Cella | Origine |
-|---|---|
-| `B11` | rating Reddituale (da `sub_grade_reddituale`) |
-| `B14` | rating Finanziaria (da `sub_grade_finanziaria`) |
-| `B17` | rating Patrimoniale (da `sub_grade_patrimoniale`) |
+Altre chiavi vengono rifiutate (`render_pdf.py` esce con codice 1). Un blocco mancante
+resta vuoto.
 
-## Budget di lunghezza
-Le celle merge hanno spazio limitato (font Syne 12, a capo automatico). `build_report.py`
-stampa e salva in `metrics.json` (`text_budgets`) il **massimo di caratteri** e il
-numero di righe per ciascun blocco. Tenersi entro il budget: testo piu' lungo viene
-troncato nel PDF. Valori tipici (dipendono dalle larghezze colonna del modello):
+## Lunghezza dei testi
+Ogni blocco ha un riquadro fisso (Helvetica 9,5 pt). `render_pdf.py` **misura** ogni
+testo: se non ci sta lo rimpicciolisce per non coprire il resto e stampa un
+`[avviso capienza]`, quindi va accorciato e il PDF rigenerato. `metrics.json.text_budgets`
+indica la capienza approssimativa (`max_chars`, `lines`): circa 1.800 caratteri per i
+blocchi di pagina 1 e 1.550 per quelli di pagina 2. Testi piu' brevi rendono meglio:
+puntare a 600-1.000 caratteri.
 
-| Blocco | Indicativo |
-|---|---|
-| `economico` (A:B) | ~550–600 caratteri, ~10 righe |
-| `finanziario_patrimoniale` (C:D) | ~360–400 caratteri, ~10 righe |
-| `sintesi` (A:B) | ~550–600 caratteri, ~10 righe |
-| `grade_fido` (C:D) | ~360–400 caratteri, ~10 righe |
-
-## Stile dei testi
-- Prosa discorsiva in italiano, registro professionale (merito creditizio).
-- Frasi brevi; si possono usare a capo (`\n`) per separare 2–3 micro-paragrafi.
+## Stile
+- Prosa in italiano, registro professionale di analisi di bilancio.
+- Frasi brevi; a capo (`\n`) per separare 2-3 micro-paragrafi.
 - Ogni affermazione ancorata a un numero di `metrics.json`.
-- Niente markdown, niente elenchi puntati con simboli: solo testo semplice.
-- Coerenza fra il rating mostrato e il contenuto della sezione.
+- Niente markdown, niente elenchi con simboli.
 
-## Output finali
-- `<azienda>_<anno>_report.xlsx` — workbook **editabile** (formule vive, testi e
-  rating inseriti): l'operatore puo' rivederlo e correggerlo.
-- `<azienda>_<anno>_report.pdf` — il report a layout fisso, da consegnare.
+## Output
+- `fsa-output/<azienda>_<anno>_report.pdf` (oppure il percorso di `--out`).

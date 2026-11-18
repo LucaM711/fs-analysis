@@ -99,7 +99,7 @@ def main() -> int:
     print("\n== CHIAVI CANONICHE DA COMPILARE (normalized.json) ==")
     print("Conto Economico:", list(mapping.CE_KEYS))
     print("Stato Patrimoniale:", list(mapping.SP_KEYS))
-    print("Meta:", list(mapping.META_CELLS))
+    print("Meta:", list(mapping.META_KEYS))
 
     if args.skeleton:
         args.skeleton.write_text(

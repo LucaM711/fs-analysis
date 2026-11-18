@@ -1,33 +1,33 @@
 # fs-analysis — Analisi di bilancio (plugin Claude Code)
 
-Plugin Claude Code che trasforma **un** bilancio "sporco" (Stato Patrimoniale +
-Conto Economico, in **PDF** o **XLSX**, anche scansione) in un **report a layout
-fisso** — esportato in **PDF** e disponibile come **XLSX editabile** per gli
-aggiustamenti dell'operatore.
+Plugin Claude Code che trasforma un bilancio "sporco" (Stato Patrimoniale + Conto
+Economico, in **PDF** o **XLSX**, anche scansione, con **2 o piu' esercizi**) in
+un'**analisi conversazionale**, con insight, grafici e risposte alle domande in chat, e in
+un **report PDF a layout fisso**.
 
 La skill ragiona cosi':
 
-1. carica il bilancio (un solo upload, qualunque formato);
+1. carica il bilancio (qualunque formato) e ne estrae tutti gli esercizi disponibili;
 2. **riclassifica** le voci secondo i principi contabili italiani (schema CEE, artt.
-   2424/2425 c.c.) mappandole sulle tabelle del modello;
-3. **verifica la quadratura al centesimo** di Attivo e Passivo (con riconciliazione
-   dei soli residui di arrotondamento);
-4. calcola **indici, grade e fido** con il modello Excel (unica fonte di verita'), per
-   ogni esercizio caricato (2 o piu': con 3+ anche l'**andamento pluriennale**), e
-   redige le **4 analisi** (Economico, Finanziario e Patrimoniale, Sintesi, Grade e
-   Fido);
-5. inietta i testi nelle celle predefinite ed esporta il **PDF**; il **formato del
-   report non cambia mai**.
+   2424/2425 c.c.);
+3. **verifica la quadratura al centesimo** di Attivo e Passivo per ogni esercizio
+   (assorbendo solo i residui di arrotondamento);
+4. calcola per ogni esercizio **indici**, un **punteggio sintetico** con i rating per
+   area e l'**Altman Z''**;
+5. presenta in chat quadratura, giudizio, KPI, insight e **grafici** (interattivi dove
+   la superficie lo permette) e risponde a domande e **simulazioni**;
+6. su richiesta scrive le 4 analisi testuali e genera il **PDF**.
 
 ## Architettura (perche' l'output e' riproducibile)
 
 | Parte | Chi la fa | Garanzia |
 |---|---|---|
-| Lettura del bilancio + mappatura voci | Agente (Claude) | ragionamento, anche su scansioni |
-| Popolamento modello, quadratura, indici/grade/fido, PDF | Engine Python deterministico | stessi input → stessi numeri |
-| Layout del report | Modello `template.xlsx` (mai modificato) | formato sempre identico |
+| Lettura del bilancio, mappatura delle voci, spiegazioni in chat, testi | Agente (Claude) | ragionamento, anche su scansioni |
+| Quadratura, indici, punteggio, Altman Z'', grafici PNG, PDF | Engine Python deterministico (`scripts/fsa/`) | stessi input → stessi numeri |
+| Layout del report | `fsa/report.py` | formato sempre identico |
 
-L'engine non duplica le formule: **valorizza** il modello e ne **rilegge** i risultati.
+Tutti i numeri finiscono in `metrics.json`: la chat, i grafici e il PDF leggono solo
+quello. Le soglie e i pesi del punteggio sono tabelle leggibili in `fsa/scoring.py`.
 
 ## Struttura della repository
 
@@ -37,9 +37,8 @@ plugins/fs-analysis/
   .claude-plugin/plugin.json           # manifest del plugin (versione SemVer)
   skills/analyzing-financial-statements/
     SKILL.md                           # workflow della skill
-    references/                        # mapping IT GAAP, indici/grade/fido, formato output
-    assets/                            # template.xlsx + font Syne (OFL)
-    scripts/                           # CLI + engine `fsa/`
+    references/                        # mappatura IT GAAP, indici e punteggio, chat, testi, PDF
+    scripts/                           # CLI (ingest, analyze, render_pdf) + engine `fsa/`
 tests/                                 # test dell'engine
 pyproject.toml  release.config.mjs  sync-version.mjs  .github/workflows/
 ```
@@ -54,34 +53,31 @@ pyproject.toml  release.config.mjs  sync-version.mjs  .github/workflows/
 Poi basta caricare un bilancio e chiedere l'analisi: la skill si attiva da sola.
 
 ### Dipendenze d'esecuzione
-- Python: `openpyxl` (obbligatorio), `pdfplumber` (opzionale, PDF digitali).
-- **LibreOffice** (`soffice`) per ricalcolo ed export PDF. In locale:
-  `brew install --cask libreoffice` (macOS) / `apt-get install -y libreoffice-calc`.
-  Su macOS con Microsoft Excel il fallback e' automatico. Nel sandbox di Claude
-  (web) LibreOffice e' gia' disponibile.
-- Il font **Syne** (OFL) e' incluso e viene installato automaticamente al rendering.
+- Python 3.10+: `openpyxl`, `reportlab`, `matplotlib` (obbligatori), `pdfplumber`
+  (opzionale, PDF digitali).
+- Nessun programma esterno: niente LibreOffice o Excel.
 
 ## Uso manuale degli script (debug / pipeline)
 
 ```bash
 SKILL=plugins/fs-analysis/skills/analyzing-financial-statements
 # 1) assist estrazione + schema
-python $SKILL/scripts/ingest.py BILANCIO.pdf --skeleton normalized.json --anno 2024 --esercizi 2
-# 2) compila normalized.json (mappatura) e verifica + popola + metriche
-python $SKILL/scripts/build_report.py normalized.json --out-dir fsa-output
-# 3) scrivi analysis.json (4 blocchi) ed esporta il PDF
-python $SKILL/scripts/render_pdf.py fsa-output/<azienda>_<anno>_report.xlsx --analysis analysis.json
+python $SKILL/scripts/ingest.py BILANCIO.pdf --skeleton normalized.json --anno 2024 --esercizi 3
+# 2) compila normalized.json, poi quadratura + metriche + grafici
+python $SKILL/scripts/analyze.py normalized.json --out-dir fsa-output
+# 3) scrivi analysis.json (4 blocchi) e genera il PDF
+python $SKILL/scripts/render_pdf.py fsa-output/metrics.json --analysis analysis.json
 ```
 
-`build_report.py` esce con codice **2** se il bilancio non quadra al centesimo:
-si corregge la mappatura e si ripete.
+`analyze.py` esce con codice **2** se il bilancio non quadra al centesimo: si corregge
+la mappatura e si ripete.
 
 ## Sviluppo
 
 ```bash
 pip install -r requirements.txt   # installa Poetry
 poetry install                    # ambiente di sviluppo
-poetry run poe test               # test (i casi che richiedono LibreOffice si saltano se assente)
+poetry run poe test               # test
 poetry run poe static-checks      # ruff + mypy
 poetry run poe format             # formattazione
 ```
@@ -94,4 +90,4 @@ versione in `pyproject.toml`, `plugin.json` e `marketplace.json`. **Nessuna**
 pubblicazione su PyPI. Le altre branch eseguono un dry-run.
 
 ## Licenza
-[Apache 2.0](LICENSE). Font Syne: [SIL Open Font License](plugins/fs-analysis/skills/analyzing-financial-statements/assets/fonts/OFL.txt).
+[Apache 2.0](LICENSE).
