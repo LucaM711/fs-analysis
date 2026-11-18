@@ -97,7 +97,8 @@ Modello di Altman (1995) per le imprese non quotate:
 | `x3` | EBIT / totale attivo |
 | `x4` | PN / (totale attivo − PN) |
 
-Zone (`zona`): **sicurezza** oltre 2,60; **grigia** da 1,10 a 2,60; **rischio** sotto 1,10.
+Zone (`zona`): **sicurezza** oltre 2,60; **grigia** da 1,10 a 2,60 compresi; **rischio** sotto 1,10.
+La zona si decide sullo Z'' arrotondato a 2 decimali, cioe' sul valore mostrato.
 E' un indicatore statistico di rischio, non una previsione: citarlo come tale.
 
 ## Dimensione d'impresa

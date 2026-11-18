@@ -128,6 +128,8 @@ def _components(v: dict[str, Any], ind: dict[str, Any], prev: tuple[dict, dict])
         "peso_liquidita": div(v["disponibilita_liquide"], v["totale_attivo"]),
         "crescita_liquidita": var(v["disponibilita_liquide"], pv["disponibilita_liquide"]),
         "crescita_ebitda": var(v["ebitda"], pv["ebitda"]),
+        "liquidita_oltre_debito_fin_breve": v["disponibilita_liquide"] - v["debiti_finanziari_breve"],
+        "liquidita_oltre_debito_fin_totale": v["disponibilita_liquide"] - v["totale_debiti_finanziari"],
         "peso_patrimonio_netto": div(v["totale_patrimonio_netto"], v["totale_attivo"]),
         "rapporto_indebitamento": ind["rapporto_indebitamento"],
     }
@@ -140,9 +142,12 @@ def areas(v: dict[str, Any], ind: dict[str, Any], prev: tuple[dict, dict]) -> di
     for area, rules in AREA_COMPONENTS.items():
         scores = {k: _component_score(comp[k], th, d) for k, (th, d) in rules.items() if comp[k] is not None}
         if area == "finanziaria":
-            cash = v["disponibilita_liquide"]
-            scores["liquidita_oltre_debito_fin_breve"] = 3 if cash - v["debiti_finanziari_breve"] > 0 else 4
-            scores["liquidita_oltre_debito_fin_totale"] = 2 if cash - v["totale_debiti_finanziari"] > 0 else 3
+            scores["liquidita_oltre_debito_fin_breve"] = (
+                3 if comp["liquidita_oltre_debito_fin_breve"] > 0 else 4
+            )
+            scores["liquidita_oltre_debito_fin_totale"] = (
+                2 if comp["liquidita_oltre_debito_fin_totale"] > 0 else 3
+            )
         score = round_half_up(sum(scores.values()) / len(scores)) if scores else None
         out[area] = {
             "punteggio": score,
@@ -187,5 +192,6 @@ def altman(v: dict[str, Any]) -> dict[str, Any] | None:
         pn / (ta - pn),
     )
     z = sum(w * xi for w, xi in zip(ALTMAN_WEIGHTS, x))
-    zone = "sicurezza" if z > ALTMAN_SAFE else "grigia" if z >= ALTMAN_DISTRESS else "rischio"
+    shown = round(z, 2)  # zona coerente con il valore mostrato (2,5977 -> 2,60 -> grigia)
+    zone = "sicurezza" if shown > ALTMAN_SAFE else "grigia" if shown >= ALTMAN_DISTRESS else "rischio"
     return {"x1": x[0], "x2": x[1], "x3": x[2], "x4": x[3], "z": z, "zona": zone}

@@ -43,6 +43,7 @@ RATING_COLORS = {
     "Critica": "#d9822b",
     "Molto Critica": "#b84040",
 }
+LOWER_IS_BETTER = {"totale_debiti_finanziari"}  # KPI per cui un calo e' un miglioramento
 ZONE_LABELS = {"sicurezza": "zona di sicurezza", "grigia": "zona grigia", "rischio": "zona di rischio"}
 
 FONT, BOLD = "Helvetica", "Helvetica-Bold"
@@ -223,7 +224,7 @@ def _page_summary(c: Canvas, m: dict[str, Any]) -> None:
             BOLD,
             {"sicurezza": GOOD, "rischio": BAD}.get(z["zona"], MUTED),
         )
-    _text(c, M + 360, top - 82, "soglie: 1,10 · 2,60", 8, color=MUTED)
+    _text(c, M + 360, top - 82, "sicurezza oltre 2,60 · rischio sotto 1,10", 8, color=MUTED)
 
     # KPI
     v, var = last["valori"], last["variazioni"] or {}
@@ -248,7 +249,8 @@ def _page_summary(c: Canvas, m: dict[str, Any]) -> None:
         _text(c, x + 8, y + 15, eur_short(value), 11, BOLD)
         delta = var.get(key) if key else None
         if delta is not None:
-            _text(c, x + tw - 8, y + 15, change(delta), 8, BOLD, GOOD if delta >= 0 else BAD, align="right")
+            better = delta <= 0 if key in LOWER_IS_BETTER else delta >= 0
+            _text(c, x + tw - 8, y + 15, change(delta), 8, BOLD, GOOD if better else BAD, align="right")
 
 
 def _draw_text_blocks(c: Canvas, texts: dict[str, str], page: int) -> None:

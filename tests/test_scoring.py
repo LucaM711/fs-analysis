@@ -64,7 +64,16 @@ def test_pfn_ebitda_special_cases(last):
 
 
 @pytest.mark.parametrize(
-    ("z", "zone"), [(2.61, "sicurezza"), (2.6, "grigia"), (1.1, "grigia"), (1.09, "rischio")]
+    ("z", "zone"),
+    [
+        (2.61, "sicurezza"),
+        (2.6, "grigia"),
+        (2.6004, "grigia"),
+        (2.5977, "grigia"),
+        (1.1, "grigia"),
+        (1.0951, "grigia"),
+        (1.09, "rischio"),
+    ],
 )
 def test_altman_zones(last, z, zone):
     v = dict(last["valori"])
@@ -98,3 +107,17 @@ def test_firm_size_eu(staff, turnover, assets, size):
         scoring.firm_size({"dipendenti": staff, "ricavi_di_vendita": turnover, "totale_attivo": assets})
         == size
     )
+
+
+def test_liquidity_components_carry_their_values(sample_data):
+    m = metrics.compute(CanonicalBalance.from_dict(sample_data))
+    comp = m["esercizi"][0]["punteggio"]["aree"]["finanziaria"]["componenti"]
+    v = m["esercizi"][0]["valori"]
+    assert (
+        comp["liquidita_oltre_debito_fin_breve"]["valore"]
+        == v["disponibilita_liquide"] - v["debiti_finanziari_breve"]
+    )
+    assert comp["liquidita_oltre_debito_fin_totale"] == {
+        "valore": v["disponibilita_liquide"] - v["totale_debiti_finanziari"],
+        "punteggio": 3,  # liquidita' sotto il debito finanziario totale
+    }
