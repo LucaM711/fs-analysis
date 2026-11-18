@@ -72,6 +72,10 @@ jobs:
           - '3.11'
           - '3.12'
           - '3.13'
+        exclude:
+          # shortcut: ubuntu-latest (26.04) has no Python 3.9 build; drop when 3.9 support is dropped
+          - os: ubuntu-latest
+            python-version: '3.9'
     runs-on: ${{ matrix.os }}
     name: Test on Python ${{ matrix.python-version }}, on ${{ matrix.os }}
     timeout-minutes: 45
