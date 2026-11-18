@@ -9,7 +9,7 @@ merge, font Syne, stili, area di stampa) resta invariato.
     C46:D55  -> Grade e Fido
     B11      -> rating Reddituale   (valore)
     B17      -> rating Patrimoniale (valore)
-    B14      -> rating Finanziaria  (e' una formula del modello: NON si tocca)
+    B14      -> rating Finanziaria  (valore)
 """
 
 from __future__ import annotations

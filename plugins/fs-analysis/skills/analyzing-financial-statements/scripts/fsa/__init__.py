@@ -11,10 +11,3 @@ Separazione delle responsabilita':
 Il foglio di calcolo modello (``assets/template.xlsx``) contiene gia' tutte le
 formule di indici, grade e fido: questo engine non le duplica, le valorizza.
 """
-
-from __future__ import annotations
-
-__all__ = ["__version__"]
-
-# Tenuta in sync con plugin.json / pyproject.toml da semantic-release.
-__version__ = "0.1.0"
