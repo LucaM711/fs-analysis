@@ -13,10 +13,12 @@ from pathlib import Path
 from typing import Any, Callable
 from xml.sax.saxutils import escape
 
+import matplotlib
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.pdfbase.pdfmetrics import stringWidth
+from reportlab.pdfbase.pdfmetrics import registerFont, stringWidth
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import KeepInFrame, Paragraph, Table, TableStyle
 
@@ -46,7 +48,12 @@ RATING_COLORS = {
 LOWER_IS_BETTER = {"totale_debiti_finanziari"}  # KPI per cui un calo e' un miglioramento
 ZONE_LABELS = {"sicurezza": "zona di sicurezza", "grigia": "zona grigia", "rischio": "zona di rischio"}
 
-FONT, BOLD = "Helvetica", "Helvetica-Bold"
+# DejaVu Sans arriva con matplotlib e copre simboli come ≥ → ≈, che Helvetica (font
+# standard del PDF) non ha: li sostituirebbe con altri caratteri senza avvisare.
+FONT, BOLD = "DejaVuSans", "DejaVuSans-Bold"
+_TTF = Path(matplotlib.get_data_path()) / "fonts" / "ttf"
+for _name in (FONT, BOLD):
+    registerFont(TTFont(_name, str(_TTF / f"{_name}.ttf")))
 TEXT_STYLE = ParagraphStyle("testo", fontName=FONT, fontSize=9.5, leading=13, textColor=INK)
 
 # Blocco testuale -> (titolo, pagina, x, y in basso, larghezza, altezza)
@@ -246,11 +253,11 @@ def _page_summary(c: Canvas, m: dict[str, Any]) -> None:
         c.setStrokeColor(LINE)
         c.roundRect(x, y, tw, th, 5, stroke=1, fill=0)
         _text(c, x + 8, y + th - 13, label, 7, color=MUTED)
-        _text(c, x + 8, y + 15, eur_short(value), 11, BOLD)
+        _text(c, x + 8, y + 18, eur_short(value), 11, BOLD)
         delta = var.get(key) if key else None
-        if delta is not None:
+        if delta is not None:  # riga sua: accanto al valore non ci sta
             better = delta <= 0 if key in LOWER_IS_BETTER else delta >= 0
-            _text(c, x + tw - 8, y + 15, change(delta), 8, BOLD, GOOD if better else BAD, align="right")
+            _text(c, x + 8, y + 6, f"{change(delta)} sul {anni[1]}", 7, BOLD, GOOD if better else BAD)
 
 
 def _draw_text_blocks(c: Canvas, texts: dict[str, str], page: int) -> None:
@@ -271,15 +278,30 @@ def _page_charts(c: Canvas, chart_paths: dict[str, Path]) -> None:
         c.drawImage(str(chart_paths[name]), x, y, cw, ch, preserveAspectRatio=True)
 
 
+def _money_unit(es: list[dict], rows: list[Row]) -> tuple[float, str]:
+    """Importi in euro, o in migliaia oltre i 10 milioni: in colonna non ci stanno."""
+    amounts = [
+        abs(x) for e in es for _, get, fmt in rows if fmt is eur and isinstance(x := get(e), (int, float))
+    ]
+    return (1000.0, "migliaia di €") if max(amounts, default=0) >= 1e7 else (1.0, "€")
+
+
 def _year_table(m: dict[str, Any], rows: list[Row], with_var: bool):
     es = m["esercizi"][:MAX_TABLE_YEARS]
-    header = ["Voce"] + [str(e["anno"]) for e in es] + (["Var. %"] if with_var else [])
+    scale, unit = _money_unit(es, rows)
+    voce = f"Voce ({unit})" if any(fmt is eur for _, _, fmt in rows) else "Voce"
+    header = [voce] + [str(e["anno"]) for e in es] + (["Var. %"] if with_var else [])
     body, bold = [header], []
     for label, get, fmt in rows:
         if label.startswith("**"):
             label = label.strip("*")
             bold.append(len(body))
-        line = [label] + [fmt(get(e)) for e in es]
+        cell = (
+            (lambda x: "n.d." if not isinstance(x, (int, float)) else _it(x / scale, 0))
+            if fmt is eur
+            else fmt
+        )
+        line = [label] + [cell(get(e)) for e in es]
         if with_var:
             line.append(change(get_var(m, get)))
         body.append(line)
@@ -345,7 +367,7 @@ INDEX_ROWS: list[Row] = [
     ("Current ratio", _ind("current_ratio"), ratio),
     ("**Indebitamento", lambda e: None, lambda x: ""),
     ("Rapporto di indebitamento", _ind("rapporto_indebitamento"), ratio),
-    ("PFN (+ = cassa netta)", _ind("pfn"), eur),
+    ("PFN (+ = cassa netta)", _ind("pfn"), eur_short),
     ("PFN / EBITDA", _ind("pfn_ebitda"), ratio),
     ("Margine di struttura (PN / immob.)", _ind("ims"), ratio),
     ("Copertura interessi (EBITDA / oneri)", _ind("interest_coverage"), ratio),

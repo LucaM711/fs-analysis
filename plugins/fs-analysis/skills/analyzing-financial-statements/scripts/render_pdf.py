@@ -39,6 +39,9 @@ def main() -> int:
         unknown = set(texts) - set(report.TEXT_BLOCKS)
         if unknown:
             raise ValueError(f"blocchi sconosciuti {sorted(unknown)}. Ammessi: {list(report.TEXT_BLOCKS)}")
+        not_text = sorted(k for k, v in texts.items() if v is not None and not isinstance(v, str))
+        if not_text:
+            raise ValueError(f"i blocchi {not_text} devono essere testo (una stringa, a capo con \\n).")
     except ValueError as exc:  # JSONDecodeError e' un ValueError
         print(f"[analysis.json NON valido] {exc}", file=sys.stderr)
         return 1

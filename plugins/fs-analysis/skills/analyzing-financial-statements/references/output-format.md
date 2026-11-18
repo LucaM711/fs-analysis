@@ -7,7 +7,7 @@
 |---|---|
 | 1 | Intestazione (ragione sociale, periodo), profilo (P.IVA, ATECO, forma giuridica, sede, dimensione UE, dipendenti), **valutazione sintetica** (punteggio 1-10, rating per area, Altman Z'' con zona), 8 KPI con variazione %, blocchi `economico` e `finanziario_patrimoniale` |
 | 2 | Blocchi `sintesi` e `valutazione`; 4 grafici: andamento economico, struttura patrimoniale, redditivita', solidita' (Z'') |
-| 3 | Stato patrimoniale riclassificato e conto economico, con la variazione % dell'ultimo anno |
+| 3 | Stato patrimoniale riclassificato e conto economico, con la variazione % dell'ultimo anno; importi in euro, o in migliaia di euro (indicato nell'intestazione) quando superano i 10 milioni |
 | 4 | Indici per anno; punteggio, rating e componenti dello Z'' per anno |
 
 Le tabelle mostrano i **5 esercizi piu' recenti**; i grafici li mostrano tutti.
@@ -24,11 +24,11 @@ Altre chiavi vengono rifiutate (`render_pdf.py` esce con codice 1). Un blocco ma
 resta vuoto.
 
 ## Lunghezza dei testi
-Ogni blocco ha un riquadro fisso (Helvetica 9,5 pt). `render_pdf.py` **misura** ogni
+Ogni blocco ha un riquadro fisso (DejaVu Sans 9,5 pt). `render_pdf.py` **misura** ogni
 testo: se non ci sta lo rimpicciolisce per non coprire il resto e stampa un
 `[avviso capienza]`, quindi va accorciato e il PDF rigenerato. `metrics.json.text_budgets`
-indica la capienza approssimativa (`max_chars`, `lines`): circa 1.800 caratteri per i
-blocchi di pagina 1 e 1.550 per quelli di pagina 2. Testi piu' brevi rendono meglio:
+indica la capienza approssimativa (`max_chars`, `lines`): circa 1.550 caratteri per i
+blocchi di pagina 1 e 1.350 per quelli di pagina 2. Testi piu' brevi rendono meglio:
 puntare a 600-1.000 caratteri.
 
 ## Stile

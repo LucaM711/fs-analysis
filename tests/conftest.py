@@ -12,7 +12,6 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 SKILL = ROOT / "plugins" / "fs-analysis" / "skills" / "analyzing-financial-statements"
 ENGINE_SCRIPTS = SKILL / "scripts"
-SCRIPTS = ENGINE_SCRIPTS
 SAMPLE = ROOT / "tests" / "fixtures" / "sample_normalized.json"
 
 # L'engine self-contained nel plugin va in sys.path per i test.

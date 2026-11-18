@@ -82,18 +82,24 @@ def struttura_patrimoniale(metrics: dict[str, Any], ax) -> None:
         ("Ratei e risconti", v["ratei_risconti_passivi"]),
     )
     total = v["totale_attivo"] or 1
+    low, high = 0.0, 100.0
     for x, parts in ((0, attivo), (1, passivo)):
-        bottom = 0.0
+        up = down = 0.0  # le quote negative (es. patrimonio netto) scendono sotto lo zero
         for i, (label, amount) in enumerate(parts):
             share = amount / total * 100
-            ax.bar(x, share, 0.6, bottom=bottom, color=SERIES[i % len(SERIES)], edgecolor="white")
-            if share >= 6:
-                ax.text(
-                    x, bottom + share / 2, f"{label}\n{share:.0f}%", ha="center", va="center", fontsize=6.5
-                )
-            bottom += share
+            base = up if share >= 0 else down
+            ax.bar(x, share, 0.6, bottom=base, color=SERIES[i % len(SERIES)], edgecolor="white")
+            if abs(share) >= 6:
+                ax.text(x, base + share / 2, f"{label} {share:.0f}%", ha="center", va="center", fontsize=6.5)
+            if share >= 0:
+                up += share
+            else:
+                down += share
+        low, high = min(low, down), max(high, up)
     ax.set_xticks((0, 1), ("Attivo", "Passivo"))
-    ax.set_ylim(0, 100)
+    ax.set_ylim(low, high)
+    if low < 0:
+        ax.axhline(0, color=MUTED, linewidth=0.8)
     ax.set_ylabel("% del totale", fontsize=8, color=MUTED)
     _style(ax, f"Struttura patrimoniale {metrics['esercizi'][0]['anno']}")
 
