@@ -53,9 +53,15 @@ def main() -> int:
     if args.analysis:
         from openpyxl import load_workbook
 
-        texts = json.loads(args.analysis.read_text(encoding="utf-8"))
-        wb = load_workbook(filename=str(args.xlsx), data_only=False)
-        warnings = narrative.inject(wb, texts=texts)
+        try:
+            texts = json.loads(args.analysis.read_text(encoding="utf-8"))
+            if not isinstance(texts, dict):
+                raise ValueError("deve contenere un oggetto JSON con i 4 blocchi.")
+            wb = load_workbook(filename=str(args.xlsx), data_only=False)
+            warnings = narrative.inject(wb, texts=texts)
+        except (ValueError, KeyError) as exc:  # JSONDecodeError e' un ValueError
+            print(f"[analysis.json NON valido] {exc.args[0]}", file=sys.stderr)
+            return 1
         wb.save(str(args.xlsx))
         for w in warnings:
             print(f"[avviso capienza] {w}", file=sys.stderr)

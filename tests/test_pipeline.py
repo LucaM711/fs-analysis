@@ -9,12 +9,15 @@ from fsa import flatten, metrics, narrative, soffice
 from fsa.model import CanonicalBalance
 from fsa.populate import build_populated
 
-pytestmark = pytest.mark.skipif(
+from tests.conftest import with_years
+
+needs_renderer = pytest.mark.skipif(
     soffice.find_soffice() is None and not soffice.have_excel(),
     reason="LibreOffice/Excel non disponibile per il rendering",
 )
 
 
+@needs_renderer
 def test_recalc_metrics_and_pdf(tmp_path, template_path, sample_data):
     bal = CanonicalBalance.from_dict(sample_data)
     xlsx = build_populated(template_path, bal, tmp_path / "report.xlsx")
@@ -50,10 +53,27 @@ def test_recalc_metrics_and_pdf(tmp_path, template_path, sample_data):
     assert pdf.exists() and pdf.stat().st_size > 1000
 
 
+@needs_renderer
+def test_storico_from_pairs(tmp_path, template_path, sample_data):
+    bal = CanonicalBalance.from_dict(with_years(sample_data, 3))
+    windows = []
+    for k in range(len(bal.years) - 1):
+        xlsx = build_populated(template_path, bal.window(k), tmp_path / f"y{k}.xlsx")
+        soffice.recalc(xlsx)
+        windows.append(metrics.read_back(xlsx))
+    s = metrics.storico(windows)
+    assert [e["anno"] for e in s] == [2024, 2023, 2022]
+    # ogni anno ha l'EBITDA calcolato dal modello: EBIT + Ammortamenti dell'anno stesso
+    assert s[1]["economico"]["ebitda"] == windows[0]["economico"]["ebitda"]["y1"]
+    assert s[2]["economico"]["ebitda"] == round(bal.ce("ebit", "y2") + bal.ce("ammortamenti", "y2"), 2)
+    assert s[1]["grade_fido"]["grade_finale"] is not None
+
+
 def test_skeleton_roundtrip(sample_data):
     from fsa import model
 
-    skel = model.skeleton(2024)
+    skel = model.skeleton(2024, esercizi=4)
+    assert skel["conto_economico"]["ebit"] == {"y0": None, "y1": None, "y2": None, "y3": None}
     assert set(skel["conto_economico"]) == set(sample_data["conto_economico"])
     assert set(skel["stato_patrimoniale"]) == set(sample_data["stato_patrimoniale"])
     # lo schema vuoto, serializzato, e' JSON valido

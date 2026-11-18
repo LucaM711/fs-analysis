@@ -8,6 +8,8 @@ from fsa import mapping
 from fsa.model import CanonicalBalance
 from fsa.populate import build_populated
 
+from tests.conftest import with_years
+
 
 def test_populate_writes_inputs_only(tmp_path, template_path, sample_data):
     bal = CanonicalBalance.from_dict(sample_data)
@@ -36,3 +38,11 @@ def test_populate_writes_inputs_only(tmp_path, template_path, sample_data):
 def test_template_has_two_sheets(template_path):
     wb = load_workbook(template_path, data_only=False)
     assert wb.sheetnames == ["Input", "Report"]
+
+
+def test_populate_n_years_fills_model_columns_only(tmp_path, template_path, sample_data):
+    bal = CanonicalBalance.from_dict(with_years(sample_data, 5))
+    wb = load_workbook(build_populated(template_path, bal, tmp_path / "out.xlsx"))
+    inp = wb[mapping.INPUT_SHEET]
+    assert inp["D17"].value == bal.ce("ebit", "y2")  # 3a colonna anno del modello
+    assert inp["E17"].value is None  # y3/y4 solo nello storico, non nel foglio

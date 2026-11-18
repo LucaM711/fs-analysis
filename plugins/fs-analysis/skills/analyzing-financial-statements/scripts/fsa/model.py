@@ -7,25 +7,27 @@ l'engine. Struttura attesa::
       "meta": {"nome_azienda": str, "anno": int, "tipologia": str|null,
                "ateco": str|null, "partita_iva": str|null,
                "forma_giuridica": str|null, "sede": str|null},
-      "conto_economico":   {"<chiave>": {"y0": num, "y1": num, "y2": num?}, ...},
-      "stato_patrimoniale":{"<chiave>": {"y0": num, "y1": num, "y2": num?}, ...}
+      "conto_economico":   {"<chiave>": {"y0": num, "y1": num, ..., "yN-1": num}, ...},
+      "stato_patrimoniale":{"<chiave>": {"y0": num, "y1": num, ..., "yN-1": num}, ...}
     }
 
-``y0`` = ultimo esercizio, ``y1`` = precedente, ``y2`` = due esercizi prima (opz.).
+``y0`` = ultimo esercizio, ``y1`` = precedente, ``yK`` = K esercizi prima. Servono
+almeno 2 esercizi; se una voce ha ``yK``, tutte le voci devono avere ``y0..yK``.
 """
 
 from __future__ import annotations
 
 import json
+import math
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from . import mapping
 
-REQUIRED_YEARS = ("y0", "y1")
-OPTIONAL_YEARS = ("y2",)
-ALL_YEARS = REQUIRED_YEARS + OPTIONAL_YEARS
+MIN_YEARS = 2
+_YEAR_KEY = re.compile(r"^y(\d+)$")
 
 # Voci non incluse nella quadratura per cui, se il dato non e' separabile dal
 # bilancio (es. abbreviato), e' ammesso il valore letterale "n.d.": il modello
@@ -39,10 +41,15 @@ class ValidationError(ValueError):
 
 
 def _round2(value: Any, where: str) -> float:
+    if isinstance(value, bool):  # float(True) == 1.0: un booleano non e' un importo
+        raise ValidationError(f"{where}: valore non numerico ({value!r})")
     try:
-        return round(float(value) + 0.0, 2)
+        number = float(value)
     except (TypeError, ValueError):
         raise ValidationError(f"{where}: valore non numerico ({value!r})") from None
+    if not math.isfinite(number):  # json.loads accetta NaN/Infinity
+        raise ValidationError(f"{where}: valore non finito ({value!r})")
+    return round(number + 0.0, 2)
 
 
 @dataclass
@@ -52,7 +59,7 @@ class CanonicalBalance:
     meta: dict[str, Any] = field(default_factory=dict)
     conto_economico: dict[str, dict[str, float]] = field(default_factory=dict)
     stato_patrimoniale: dict[str, dict[str, float]] = field(default_factory=dict)
-    years: tuple[str, ...] = REQUIRED_YEARS
+    years: tuple[str, ...] = ("y0", "y1")
 
     # -- costruzione / validazione -------------------------------------------------
     @classmethod
@@ -64,17 +71,23 @@ class CanonicalBalance:
             raise ValidationError("meta.nome_azienda mancante.")
         if not meta.get("anno"):
             raise ValidationError("meta.anno mancante (ultimo esercizio).")
+        try:
+            int(meta["anno"])
+        except (TypeError, ValueError):
+            raise ValidationError(f"meta.anno deve essere un anno numerico ({meta['anno']!r}).") from None
 
         ce_in = data.get("conto_economico") or {}
         sp_in = data.get("stato_patrimoniale") or {}
 
-        # Determina quali anni sono presenti (y0,y1 obbligatori; y2 opzionale).
-        present = set(REQUIRED_YEARS)
+        # Esercizi: da y0 fino al piu' vecchio valorizzato in una voce qualsiasi.
+        n = MIN_YEARS
         for section in (ce_in, sp_in):
-            for cell in section.values():
-                if isinstance(cell, dict) and cell.get("y2") is not None:
-                    present.add("y2")
-        years = tuple(y for y in ALL_YEARS if y in present)
+            for cell in section.values() if isinstance(section, dict) else ():
+                for k, v in cell.items() if isinstance(cell, dict) else ():
+                    match = _YEAR_KEY.match(str(k))
+                    if match and v is not None:
+                        n = max(n, int(match.group(1)) + 1)
+        years = tuple(f"y{k}" for k in range(n))
 
         ce = cls._read_section(ce_in, mapping.CE_KEYS, "conto_economico", years)
         sp = cls._read_section(sp_in, mapping.SP_KEYS, "stato_patrimoniale", years)
@@ -100,23 +113,20 @@ class CanonicalBalance:
             if cell is None:
                 raise ValidationError(f"{name}.{key} mancante.")
             if not isinstance(cell, dict):
-                raise ValidationError(f"{name}.{key} deve essere un oggetto con y0/y1 (e y2 opz.).")
+                raise ValidationError(f"{name}.{key} deve essere un oggetto con y0, y1, ...")
             allow_nd = key in NON_NUMERIC_OK
             values: dict[str, float] = {}
-            for y in REQUIRED_YEARS:
+            for y in years:
                 raw = cell.get(y)
                 if raw is None:
-                    raise ValidationError(f"{name}.{key}.{y} mancante.")
+                    raise ValidationError(
+                        f"{name}.{key}.{y} mancante: ogni voce deve avere tutti gli esercizi "
+                        f"{years[0]}..{years[-1]}."
+                    )
                 if allow_nd and isinstance(raw, str) and raw.strip().lower() == ND:
                     values[y] = ND  # type: ignore[assignment]
                 else:
                     values[y] = _round2(raw, f"{name}.{key}.{y}")
-            if "y2" in years and cell.get("y2") is not None:
-                raw = cell["y2"]
-                if allow_nd and isinstance(raw, str) and raw.strip().lower() == ND:
-                    values["y2"] = ND  # type: ignore[assignment]
-                else:
-                    values["y2"] = _round2(raw, f"{name}.{key}.y2")
             out[key] = values
         return out
 
@@ -136,19 +146,29 @@ class CanonicalBalance:
     def sp(self, key: str, year: str) -> float:
         return self.stato_patrimoniale[key].get(year, 0.0)
 
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "meta": self.meta,
-            "conto_economico": self.conto_economico,
-            "stato_patrimoniale": self.stato_patrimoniale,
-        }
+    def window(self, k: int) -> "CanonicalBalance":
+        """La coppia (y{k}, y{k+1}) come (y0, y1), con ``anno`` = ultimo anno - k.
+
+        Il modello confronta sempre 2 esercizi: lo storico si ottiene ricalcolandolo
+        una volta per ogni coppia di esercizi consecutivi.
+        """
+        new, old = self.years[k], self.years[k + 1]
+
+        def shift(section: dict[str, dict[str, float]]) -> dict[str, dict[str, float]]:
+            return {key: {"y0": v[new], "y1": v[old]} for key, v in section.items()}
+
+        return CanonicalBalance(
+            meta={**self.meta, "anno": int(self.meta["anno"]) - k},
+            conto_economico=shift(self.conto_economico),
+            stato_patrimoniale=shift(self.stato_patrimoniale),
+        )
 
 
-def skeleton(anno: int | None = None) -> dict[str, Any]:
-    """Schema vuoto di ``normalized.json`` da far compilare all'agente."""
+def skeleton(anno: int | None = None, esercizi: int = MIN_YEARS) -> dict[str, Any]:
+    """Schema vuoto di ``normalized.json`` (``esercizi`` = y0..y{esercizi-1})."""
 
     def empty_section(keys: tuple[str, ...]) -> dict[str, dict[str, Any]]:
-        return {k: {"y0": None, "y1": None} for k in keys}
+        return {k: {f"y{i}": None for i in range(esercizi)} for k in keys}
 
     return {
         "meta": {
